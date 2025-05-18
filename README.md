@@ -2,54 +2,79 @@
 
 A full-stack web app to track, organize, and analyze job applications.
 
-## Features (Planned)
-- Add/edit/delete job applications
-- Filter/sort by status, date, and tags
-- Resume tracking and notes per job
-- Analytics dashboard (offers, interview rate, etc.)
-- AI tools for summarizing job descriptions and generating cover letters
+## ✨ Features (Completed)
+- ✅ Add new job applications via form
+- ✅ View all job applications in a clean UI
+- ✅ Delete applications from the list
+- ✅ React frontend communicates with FastAPI backend using Axios
+- ✅ Backend stores jobs in SQLite using SQLAlchemy ORM
 
-## Tech Stack
-- Frontend: React + Tailwind CSS
-- Backend: FastAPI (Python)
-- Database: SQLite (local), PostgreSQL (production)
-- Deployment: Vercel (frontend), Render (backend)
+## 🚧 Features In Progress / Planned
+- Edit existing job entries (status, notes)
+- Filter by status or date
+- Analytics dashboard (total applied, offer rate, etc.)
+- AI tools for job description summaries and cover letter drafts
+- Deployment to Vercel (frontend) and Render (backend)
 
-## Milestone Plan
-
-### Week 1 – MVP
-- Basic CRUD (add/edit/delete jobs)
-- React frontend + FastAPI backend
-- Local SQLite database
-
-### Week 2 – Polish & Power Features
-- Filtering, tags, resume tracking
-- Notes, search, and status sorting
-- Improved UI
-
-### Week 3 – “Wow” Features
-- Analytics dashboard
-- AI summarizer and cover letter helper
-- Full deployment + README polish
+## 🛠 Tech Stack
+- **Frontend:** React + Tailwind CSS (Vite)
+- **Backend:** FastAPI (Python)
+- **Database:** SQLite (local), PostgreSQL (future production)
+- **Dev Tools:** Axios, GitHub, VS Code
+- **Deployment (Planned):** Vercel + Render
 
 ---
 
-## Getting Started (coming soon)
+## ✅ Getting Started
 
-...
+### Backend (FastAPI)
 
-## Folder Structure
+```bash
+cd backend
+python3 -m venv venv
+source venv/bin/activate
+pip install -r requirements.txt
+uvicorn main:app --reload
+```
+
+### Frontend (React)
+```bash
+cd frontend
+npm install
+npm run dev
+```
+App runs at: http://localhost:5173
+Backend API at: http://localhost:8000/docs
+
+### 📁 Folder Structure
+```bash
 job-app-tracker/
 ├── backend/
 │   ├── main.py
-│   ├── models/
-│   ├── routers/
+│   ├── models.py
+│   ├── schemas.py
 │   ├── database.py
 │   └── requirements.txt
 ├── frontend/
 │   ├── public/
 │   └── src/
 │       ├── components/
-│       ├── pages/
+│       │   ├── JobList.jsx
+│       │   └── JobForm.jsx
 │       └── App.jsx
 └── README.md
+```
+
+## 📅 Milestone Plan
+
+### Week 1 – MVP
+- ✅ Basic CRUD (add/delete)
+- ✅ React + FastAPI + SQLite local setup
+
+### Week 2 – UI Polish & Filtering
+- Edit, filter, tag support
+- Deployment setup
+
+### Week 3 – “Wow” Features
+- Analytics
+- AI Assistant tools (OpenAI)
