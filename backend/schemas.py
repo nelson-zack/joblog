@@ -15,4 +15,4 @@ class JobOut(JobCreate):
     tags: Optional[str] = ""
 
     class Config:
-        orm_mode = True
+        from_attributes = True
