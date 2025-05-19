@@ -22,7 +22,7 @@ const JobForm = ({ onJobAdded }) => {
     e.preventDefault();
       console.log("Selected tags:", selectedTags); // ← Add this
     axios
-        .post("http://localhost:8000/jobs/", {
+        .post("https://joblog-api.onrender.com/jobs/", {
         ...formData,
         tags: selectedTags.join(","),
         })

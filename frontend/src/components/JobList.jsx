@@ -17,14 +17,14 @@ const JobList = ({ jobs, setJobs }) => {
 
   useEffect(() => {
     axios
-      .get("http://localhost:8000/jobs/")
+      .get("https://joblog-api.onrender.com/jobs/")
       .then((response) => setJobs(response.data))
       .catch((error) => console.error("Error fetching jobs:", error));
   }, []);
 
   const handleDelete = (id) => {
     axios
-      .delete(`http://localhost:8000/jobs/${id}`)
+      .delete(`https://joblog-api.onrender.com/jobs/${id}`)
       .then(() => {
         setJobs((prevJobs) => prevJobs.filter((job) => job.id !== id));
       })
@@ -42,7 +42,7 @@ const JobList = ({ jobs, setJobs }) => {
 
   const handleSave = () => {
     axios
-      .put(`http://localhost:8000/jobs/${editJobId}`, editFormData)
+      .put(`https://joblog-api.onrender.com/jobs/${editJobId}`, editFormData)
       .then((res) => {
         setJobs((prevJobs) =>
           prevJobs.map((job) => (job.id === editJobId ? res.data : job))
