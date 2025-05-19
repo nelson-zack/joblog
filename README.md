@@ -13,7 +13,7 @@ A full-stack web app to track, organize, and analyze job applications.
 - ✅ Tailwind CSS used for modern styling
 
 ## 🚧 Features In Progress / Planned
-- ✏️ Edit existing job entries (status, notes, tags)
+- ✏️ Edit job status and notes (tags editing coming soon)
 - 📊 Analytics dashboard (applications total, offer rate, interview rate)
 - 🤖 AI tools for summarizing job descriptions and generating cover letters
 - ☁️ Deployment to Vercel (frontend) and Render (backend)
