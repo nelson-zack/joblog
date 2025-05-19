@@ -143,13 +143,14 @@ const JobList = ({ jobs, setJobs }) => {
                       <div className="font-semibold">
                         {job.title} @ {job.company}
                       </div>
-                      <div className="text-sm text-blue-600 underline">
+                      <div className="text-sm text-blue-600 underline break-all">
                         <a
                           href={job.link}
                           target="_blank"
                           rel="noopener noreferrer"
+                          title={job.link}
                         >
-                          {job.link}
+                          {job.link.length > 60 ? `${job.link.slice(0, 60)}...` : job.link}
                         </a>
                       </div>
                       <div>Status: {job.status}</div>
