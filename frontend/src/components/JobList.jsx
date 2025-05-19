@@ -52,9 +52,45 @@ const JobList = ({ jobs, setJobs }) => {
       .catch((err) => console.error("Error updating job:", err));
   };
 
+  // === Analytics Stats ===
+  const total = jobs.length;
+  const interviewing = jobs.filter((job) => job.status === "Interviewing").length;
+  const offers = jobs.filter((job) => job.status === "Offer").length;
+  const rejections = jobs.filter((job) => job.status === "Rejected").length;
+  const applied = jobs.filter((job) => job.status === "Applied").length;
+  const offerRate = total > 0 ? `${((offers / total) * 100).toFixed(1)}%` : "0%";
+
   return (
     <div className="p-4">
       <h2 className="text-xl font-bold mb-4">Job Applications</h2>
+
+      {/* Analytics Dashboard */}
+      <div className="grid grid-cols-2 md:grid-cols-3 lg:grid-cols-6 gap-4 mb-6 text-center">
+        <div className="bg-gray-100 p-3 rounded">
+          <div className="text-sm text-gray-500">Total</div>
+          <div className="text-xl font-semibold">{total}</div>
+        </div>
+        <div className="bg-gray-100 p-3 rounded">
+          <div className="text-sm text-gray-500">Applied</div>
+          <div className="text-xl font-semibold">{applied}</div>
+        </div>
+        <div className="bg-gray-100 p-3 rounded">
+          <div className="text-sm text-gray-500">Interviewing</div>
+          <div className="text-xl font-semibold">{interviewing}</div>
+        </div>
+        <div className="bg-gray-100 p-3 rounded">
+          <div className="text-sm text-gray-500">Offers</div>
+          <div className="text-xl font-semibold">{offers}</div>
+        </div>
+        <div className="bg-gray-100 p-3 rounded">
+          <div className="text-sm text-gray-500">Rejected</div>
+          <div className="text-xl font-semibold">{rejections}</div>
+        </div>
+        <div className="bg-gray-100 p-3 rounded">
+          <div className="text-sm text-gray-500">Offer Rate</div>
+          <div className="text-xl font-semibold">{offerRate}</div>
+        </div>
+      </div>
 
       <div className="mb-4">
         <label className="font-semibold mr-2">Filter by status:</label>
@@ -74,15 +110,15 @@ const JobList = ({ jobs, setJobs }) => {
       <div className="mb-4">
         <label className="font-semibold mr-2">Filter by tag:</label>
         <select
-            value={tagFilter}
-            onChange={(e) => setTagFilter(e.target.value)}
-            className="p-2 border rounded"
+          value={tagFilter}
+          onChange={(e) => setTagFilter(e.target.value)}
+          className="p-2 border rounded"
         >
-            <option value="All">All</option>
-            <option value="Remote">Remote</option>
-            <option value="Referral">Referral</option>
-            <option value="Urgent">Urgent</option>
-            <option value="Startup">Startup</option>
+          <option value="All">All</option>
+          <option value="Remote">Remote</option>
+          <option value="Referral">Referral</option>
+          <option value="Urgent">Urgent</option>
+          <option value="Startup">Startup</option>
         </select>
       </div>
 
@@ -90,12 +126,12 @@ const JobList = ({ jobs, setJobs }) => {
         {jobs
           .filter((job) => {
             const matchesStatus =
-                statusFilter === "All" || job.status === statusFilter;
+              statusFilter === "All" || job.status === statusFilter;
             const matchesTag =
-                tagFilter === "All" ||
-                (job.tags && job.tags.split(",").includes(tagFilter));
+              tagFilter === "All" ||
+              (job.tags && job.tags.split(",").includes(tagFilter));
             return matchesStatus && matchesTag;
-            })
+          })
           .map((job) => (
             <li
               key={`${job.id}-${job.tags}`}
@@ -150,7 +186,9 @@ const JobList = ({ jobs, setJobs }) => {
                           rel="noopener noreferrer"
                           title={job.link}
                         >
-                          {job.link.length > 60 ? `${job.link.slice(0, 60)}...` : job.link}
+                          {job.link.length > 60
+                            ? `${job.link.slice(0, 60)}...`
+                            : job.link}
                         </a>
                       </div>
                       <div>Status: {job.status}</div>
