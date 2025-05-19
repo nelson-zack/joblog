@@ -6,15 +6,17 @@ A full-stack web app to track, organize, and analyze job applications.
 - ✅ Add new job applications via form
 - ✅ View all job applications in a clean UI
 - ✅ Delete applications from the list
+- ✅ Display job tags as styled pill badges
+- ✅ Filter jobs by status and tag
 - ✅ React frontend communicates with FastAPI backend using Axios
 - ✅ Backend stores jobs in SQLite using SQLAlchemy ORM
+- ✅ Tailwind CSS used for modern styling
 
 ## 🚧 Features In Progress / Planned
-- Edit existing job entries (status, notes)
-- Filter by status or date
-- Analytics dashboard (total applied, offer rate, etc.)
-- AI tools for job description summaries and cover letter drafts
-- Deployment to Vercel (frontend) and Render (backend)
+- ✏️ Edit existing job entries (status, notes, tags)
+- 📊 Analytics dashboard (applications total, offer rate, interview rate)
+- 🤖 AI tools for summarizing job descriptions and generating cover letters
+- ☁️ Deployment to Vercel (frontend) and Render (backend)
 
 ## 🛠 Tech Stack
 - **Frontend:** React + Tailwind CSS (Vite)
@@ -56,25 +58,30 @@ job-app-tracker/
 │   ├── database.py
 │   └── requirements.txt
 ├── frontend/
+│   ├── postcss.config.js
+│   ├── tailwind.config.js
 │   ├── public/
 │   └── src/
 │       ├── components/
 │       │   ├── JobList.jsx
 │       │   └── JobForm.jsx
-│       └── App.jsx
+│       ├── App.jsx
+│       └── index.css
 └── README.md
 ```
 
 ## 📅 Milestone Plan
 
-### Week 1 – MVP
-- ✅ Basic CRUD (add/delete)
-- ✅ React + FastAPI + SQLite local setup
+### ✅ Week 1 – MVP
+- Basic CRUD (add/delete)
+- React + FastAPI + SQLite local setup
 
-### Week 2 – UI Polish & Filtering
-- Edit, filter, tag support
-- Deployment setup
+### ✅ Week 2 – UI Polish & Filtering
+- Tailwind CSS styling
+- Display tags as pills
+- Add tag + status filtering
 
 ### Week 3 – “Wow” Features
-- Analytics
-- AI Assistant tools (OpenAI)
+- Analytics dashboard
+- AI Assistant tools (OpenAI API)
+- Full deployment + README polish
