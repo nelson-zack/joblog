@@ -52,19 +52,41 @@ const JobList = ({ jobs, setJobs }) => {
       .catch((err) => console.error("Error updating job:", err));
   };
 
-  // === Analytics Stats ===
+  const downloadCSV = (data) => {
+    const headers = ["Title", "Company", "Status", "Date Applied", "Tags", "Notes", "Link"];
+    const rows = data.map((job) => [
+      job.title,
+      job.company,
+      job.status,
+      job.date_applied,
+      job.tags,
+      job.notes?.replace(/\n/g, " "),
+      job.link,
+    ]);
+    const csvContent = [headers, ...rows]
+      .map((row) => row.map((cell) => `"${cell || ""}"`).join(","))
+      .join("\n");
+    const blob = new Blob([csvContent], { type: "text/csv;charset=utf-8;" });
+    const link = document.createElement("a");
+    link.href = URL.createObjectURL(blob);
+    link.setAttribute("download", "job_applications.csv");
+    document.body.appendChild(link);
+    link.click();
+    document.body.removeChild(link);
+  };
+
   const total = jobs.length;
   const interviewing = jobs.filter((job) => job.status === "Interviewing").length;
   const offers = jobs.filter((job) => job.status === "Offer").length;
   const rejections = jobs.filter((job) => job.status === "Rejected").length;
   const applied = jobs.filter((job) => job.status === "Applied").length;
   const offerRate = total > 0 ? `${((offers / total) * 100).toFixed(1)}%` : "0%";
-
+  
   return (
     <div className="p-4">
       <h2 className="text-xl font-bold mb-4">Job Applications</h2>
 
-      {/* Analytics Dashboard */}
+      {/* Analytics */}
       <div className="grid grid-cols-2 md:grid-cols-3 lg:grid-cols-6 gap-4 mb-6 text-center">
         <div className="bg-gray-100 p-3 rounded">
           <div className="text-sm text-gray-500">Total</div>
@@ -92,6 +114,7 @@ const JobList = ({ jobs, setJobs }) => {
         </div>
       </div>
 
+      {/* Filters */}
       <div className="mb-4">
         <label className="font-semibold mr-2">Filter by status:</label>
         <select
@@ -120,6 +143,16 @@ const JobList = ({ jobs, setJobs }) => {
           <option value="Urgent">Urgent</option>
           <option value="Startup">Startup</option>
         </select>
+      </div>
+
+      {/* CSV Export */}
+      <div className="mb-4">
+        <button
+          onClick={() => downloadCSV(jobs)}
+          className="bg-gray-800 text-white px-4 py-2 rounded hover:bg-gray-700"
+        >
+          Export to CSV
+        </button>
       </div>
 
       <ul className="space-y-2">
