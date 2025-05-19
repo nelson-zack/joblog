@@ -7,7 +7,7 @@ A full-stack web app to track, organize, and analyze job applications — and th
 - ✅ View all job applications in a clean UI
 - ✅ Delete applications from the list
 - ✅ Display job tags as styled pill badges
-- ✅ Edit job status and notes
+- ✅ Edit job status, notes, and tags
 - ✅ Filter jobs by status and tag
 - ✅ Export applications to CSV
 - ✅ 7-day application trend chart (Bar graph)
@@ -17,10 +17,10 @@ A full-stack web app to track, organize, and analyze job applications — and th
 - ✅ Fully deployed frontend and backend (Vercel + Render)
 
 ## 🚧 Features In Progress / Planned
-- ✏️ Edit job tags (coming soon)
 - 📊 Expanded analytics (monthly trend, interviews vs offers)
 - 🤖 AI tools for summarizing job descriptions and generating cover letters
 - 📥 CSV import for bulk uploads
+- 📂 Optional resume attachment support
 
 ## 🔗 Live Demo
 
