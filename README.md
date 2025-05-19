@@ -7,17 +7,20 @@ A full-stack web app to track, organize, and analyze job applications — and th
 - ✅ View all job applications in a clean UI
 - ✅ Delete applications from the list
 - ✅ Display job tags as styled pill badges
+- ✅ Edit job status and notes
 - ✅ Filter jobs by status and tag
+- ✅ Export applications to CSV
+- ✅ 7-day application trend chart (Bar graph)
 - ✅ React frontend communicates with FastAPI backend using Axios
 - ✅ Backend stores jobs in a PostgreSQL database using SQLAlchemy ORM
 - ✅ Tailwind CSS used for modern, responsive styling
-- ✅ Fully deployed frontend and backend
+- ✅ Fully deployed frontend and backend (Vercel + Render)
 
 ## 🚧 Features In Progress / Planned
-- ✏️ Edit job tags (status and notes editing is already live)
-- 📊 Analytics dashboard (total applied, interviews, offer rate)
+- ✏️ Edit job tags (coming soon)
+- 📊 Expanded analytics (monthly trend, interviews vs offers)
 - 🤖 AI tools for summarizing job descriptions and generating cover letters
-- ☁️ Admin UI and export to CSV
+- 📥 CSV import for bulk uploads
 
 ## 🔗 Live Demo
 
@@ -28,7 +31,7 @@ A full-stack web app to track, organize, and analyze job applications — and th
 - **Frontend:** React + Tailwind CSS (Vite)
 - **Backend:** FastAPI (Python)
 - **Database:** PostgreSQL (Render), SQLite (local dev)
-- **Dev Tools:** Axios, GitHub, VS Code
+- **Dev Tools:** Axios, GitHub, VS Code, Chart.js
 - **Deployment:** Vercel (frontend) + Render (backend + DB)
 
 ---
@@ -71,7 +74,8 @@ job-app-tracker/
 │   └── src/
 │       ├── components/
 │       │   ├── JobForm.jsx
-│       │   └── JobList.jsx
+│       │   ├── JobList.jsx
+│       │   └── ApplicationTrends.jsx
 │       ├── App.jsx
 │       └── index.css
 └── README.md
@@ -91,6 +95,8 @@ job-app-tracker/
 ### ✅ Week 3 – “Wow” Features
 - Deployed frontend (Vercel) + backend (Render)
 - Switched backend to PostgreSQL with persistent storage
+- Added analytics dashboard (stats + bar chart)
+- Export to CSV
 - Improved README for portfolio visibility
 
 ## 💼 Portfolio Write-up
@@ -107,5 +113,7 @@ React (Vite) for the frontend, FastAPI for the backend, and PostgreSQL for persi
 - Connecting FastAPI to PostgreSQL using SQLAlchemy ORM  
 - Handling CORS and async fetch logic  
 - Styling with Tailwind for clean, responsive UIs
+- Creating basic data visualizations using Chart.js
+- Exporting frontend state as downloadable CSV
 
-I use this tool personally and will continue building on it (analytics, CSV export, OpenAI integration) as part of my ongoing growth.
+I use this tool personally and will continue building on it as part of my ongoing growth.
