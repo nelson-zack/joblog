@@ -14,14 +14,7 @@ const JobList = ({ jobs, setJobs }) => {
 
   const [statusFilter, setStatusFilter] = useState("All");
   const [tagFilter, setTagFilter] = useState("All");
-
-  useEffect(() => {
-    axios
-      .get("https://joblog-api.onrender.com/jobs/")
-      .then((response) => setJobs(response.data))
-      .catch((error) => console.error("Error fetching jobs:", error));
-  }, []);
-
+  
   const handleDelete = (id) => {
     axios
       .delete(`https://joblog-api.onrender.com/jobs/${id}`)
@@ -81,7 +74,7 @@ const JobList = ({ jobs, setJobs }) => {
   const rejections = jobs.filter((job) => job.status === "Rejected").length;
   const applied = jobs.filter((job) => job.status === "Applied").length;
   const offerRate = total > 0 ? `${((offers / total) * 100).toFixed(1)}%` : "0%";
-  
+
   return (
     <div className="p-4">
       <h2 className="text-xl font-bold mb-4">Job Applications</h2>
