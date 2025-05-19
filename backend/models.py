@@ -9,5 +9,6 @@ class Job(Base):
     company = Column(String, nullable=False)
     link = Column(String)
     status = Column(String)
-    date_applied = Column(String)  # Can use Date if you prefer
+    date_applied = Column(String)  
     notes = Column(String)
+    tags = Column(String)  # comma-separated values (e.g., "remote,referral")

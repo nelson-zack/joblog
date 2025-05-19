@@ -52,3 +52,16 @@ def delete_job(job_id: int, db: Session = Depends(get_db)):
     db.delete(job)
     db.commit()
     return {"message": "Job deleted"}
+
+@app.put("/jobs/{job_id}", response_model=schemas.JobOut)
+def update_job(job_id: int, updated_job: schemas.JobCreate, db: Session = Depends(get_db)):
+    job = db.query(models.Job).get(job_id)
+    if not job:
+        return {"error": "Job not found"}
+    
+    for key, value in updated_job.dict().items():
+        setattr(job, key, value)
+
+    db.commit()
+    db.refresh(job)
+    return job

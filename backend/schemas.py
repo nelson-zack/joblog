@@ -8,9 +8,11 @@ class JobCreate(BaseModel):
     status: Optional[str] = "Applied"
     date_applied: Optional[str] = None
     notes: Optional[str] = None
+    tags: Optional[str] = ""
 
 class JobOut(JobCreate):
     id: int
+    tags: Optional[str] = ""
 
     class Config:
         orm_mode = True
