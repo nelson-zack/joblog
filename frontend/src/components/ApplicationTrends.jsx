@@ -5,14 +5,14 @@ import { Chart as ChartJS, CategoryScale, LinearScale, BarElement, Title, Toolti
 ChartJS.register(CategoryScale, LinearScale, BarElement, Title, Tooltip, Legend);
 
 const ApplicationTrends = ({ jobs }) => {
-  // Get the last 7 days as labels
+  if (!jobs.length) return null;
+
   const last7Days = [...Array(7)].map((_, i) => {
     const date = new Date();
     date.setDate(date.getDate() - (6 - i));
     return date.toISOString().split("T")[0];
   });
 
-  // Count jobs by date_applied
   const countsByDate = last7Days.map((day) =>
     jobs.filter((job) => job.date_applied === day).length
   );
@@ -23,7 +23,7 @@ const ApplicationTrends = ({ jobs }) => {
       {
         label: "Applications",
         data: countsByDate,
-        backgroundColor: "#3b82f6", // Tailwind blue-500
+        backgroundColor: "#3b82f6",
       },
     ],
   };
@@ -47,7 +47,7 @@ const ApplicationTrends = ({ jobs }) => {
   };
 
   return (
-    <div className="mb-8 bg-white p-4 rounded shadow">
+    <div className="mb-8 bg-white p-4 rounded shadow" style={{ height: "300px" }}>
       <Bar data={data} options={options} />
     </div>
   );
