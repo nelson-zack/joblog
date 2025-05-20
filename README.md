@@ -11,16 +11,18 @@ A full-stack web app to track, organize, and analyze job applications — and th
 - ✅ Filter jobs by status and tag
 - ✅ Export applications to CSV
 - ✅ 7-day application trend chart (Bar graph)
+- ✅ Frontend interacts with backend via secure API key for write access
+- ✅ Public viewers can explore UI, but cannot modify data
 - ✅ React frontend communicates with FastAPI backend using Axios
 - ✅ Backend stores jobs in a PostgreSQL database using SQLAlchemy ORM
 - ✅ Tailwind CSS used for modern, responsive styling
 - ✅ Fully deployed frontend and backend (Vercel + Render)
+- ✅ Admin-only UI actions via API key query string
 
 ## 🚧 Features In Progress / Planned
-- 📊 Expanded analytics (monthly trend, interviews vs offers)
+- 📊 Expanded analytics (monthly trends, interviews vs offers)
 - 🤖 AI tools for summarizing job descriptions and generating cover letters
 - 📥 CSV import for bulk uploads
-- 📂 Optional resume attachment support
 
 ## 🔗 Live Demo
 
@@ -46,6 +48,11 @@ python3 -m venv venv
 source venv/bin/activate
 pip install -r requirements.txt
 uvicorn main:app --reload
+```
+
+### ⚠️ Create a .env file inside /backend with:
+```bash
+API_KEY=your_secret_key_here
 ```
 
 ### Frontend (React)
@@ -97,6 +104,7 @@ job-app-tracker/
 - Switched backend to PostgreSQL with persistent storage
 - Added analytics dashboard (stats + bar chart)
 - Export to CSV
+- API key-based write protection
 - Improved README for portfolio visibility
 
 ## 💼 Portfolio Write-up
@@ -115,5 +123,6 @@ React (Vite) for the frontend, FastAPI for the backend, and PostgreSQL for persi
 - Styling with Tailwind for clean, responsive UIs
 - Creating basic data visualizations using Chart.js
 - Exporting frontend state as downloadable CSV
+- Using environment variables and API keys to protect write access
 
 I use this tool personally and will continue building on it as part of my ongoing growth.
