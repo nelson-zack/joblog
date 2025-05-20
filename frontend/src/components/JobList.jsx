@@ -1,7 +1,7 @@
 import React, { useEffect, useState } from "react";
 import axios from "axios";
 
-const JobList = ({ jobs, setJobs, apiKey }) => {
+const JobList = ({ jobs, setJobs }) => {
   const [editJobId, setEditJobId] = useState(null);
   const [editFormData, setEditFormData] = useState({
     title: "",
@@ -15,8 +15,9 @@ const JobList = ({ jobs, setJobs, apiKey }) => {
 
   const [statusFilter, setStatusFilter] = useState("All");
   const [tagFilter, setTagFilter] = useState("All");
-
   const tagOptions = ["Remote", "Referral", "Urgent", "Startup"];
+
+  const apiKey = new URLSearchParams(window.location.search).get("key");
 
   const handleDelete = (id) => {
     const query = apiKey ? `?key=${apiKey}` : "";
