@@ -1,7 +1,7 @@
 import React, { useState } from "react";
 import axios from "axios";
 
-const JobForm = ({ onJobAdded }) => {
+const JobForm = ({ onJobAdded, apiKey }) => {
   const [formData, setFormData] = useState({
     title: "",
     company: "",
@@ -20,24 +20,25 @@ const JobForm = ({ onJobAdded }) => {
 
   const handleSubmit = (e) => {
     e.preventDefault();
-      console.log("Selected tags:", selectedTags); // ← Add this
+    const query = apiKey ? `?key=${apiKey}` : "";
+
     axios
-        .post("https://joblog-api.onrender.com/jobs/", {
+      .post(`https://joblog-api.onrender.com/jobs/${query}`, {
         ...formData,
         tags: selectedTags.join(","),
-        })
-        .then((res) => {
-            onJobAdded(res.data); // pass new job back to parent
-            setFormData({
-                title: "",
-                company: "",
-                link: "",
-                status: "Applied",
-                date_applied: "",
-                notes: "",
-                });
-                setSelectedTags([]);
-        })
+      })
+      .then((res) => {
+        onJobAdded(res.data);
+        setFormData({
+          title: "",
+          company: "",
+          link: "",
+          status: "Applied",
+          date_applied: "",
+          notes: "",
+        });
+        setSelectedTags([]);
+      })
       .catch((err) => console.error("Error adding job:", err));
   };
 
@@ -57,26 +58,26 @@ const JobForm = ({ onJobAdded }) => {
         </select>
         <textarea name="notes" value={formData.notes} onChange={handleChange} placeholder="Notes" rows={3} className="p-2 border rounded" />
         <div>
-            <label className="font-semibold">Tags:</label>
-            <div className="flex flex-wrap gap-4 mt-2">
-                {tagOptions.map((tag) => (
-                <label key={tag} className="flex items-center space-x-2">
-                    <input
-                        type="checkbox"
-                        value={tag}
-                        checked={selectedTags.includes(tag)}
-                        onChange={(e) => {
-                            if (e.target.checked) {
-                            setSelectedTags([...selectedTags, tag]);
-                            } else {
-                            setSelectedTags(selectedTags.filter((t) => t !== tag));
-                            }
-                        }}
-                    />
-                    <span>{tag}</span>
-                </label>
-                ))}
-            </div>
+          <label className="font-semibold">Tags:</label>
+          <div className="flex flex-wrap gap-4 mt-2">
+            {tagOptions.map((tag) => (
+              <label key={tag} className="flex items-center space-x-2">
+                <input
+                  type="checkbox"
+                  value={tag}
+                  checked={selectedTags.includes(tag)}
+                  onChange={(e) => {
+                    if (e.target.checked) {
+                      setSelectedTags([...selectedTags, tag]);
+                    } else {
+                      setSelectedTags(selectedTags.filter((t) => t !== tag));
+                    }
+                  }}
+                />
+                <span>{tag}</span>
+              </label>
+            ))}
+          </div>
         </div>
         <button type="submit" className="bg-blue-500 text-white px-4 py-2 rounded">
           Add Job

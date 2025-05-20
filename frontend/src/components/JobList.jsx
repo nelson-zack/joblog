@@ -1,7 +1,7 @@
 import React, { useEffect, useState } from "react";
 import axios from "axios";
 
-const JobList = ({ jobs, setJobs }) => {
+const JobList = ({ jobs, setJobs, apiKey }) => {
   const [editJobId, setEditJobId] = useState(null);
   const [editFormData, setEditFormData] = useState({
     title: "",
@@ -19,8 +19,9 @@ const JobList = ({ jobs, setJobs }) => {
   const tagOptions = ["Remote", "Referral", "Urgent", "Startup"];
 
   const handleDelete = (id) => {
+    const query = apiKey ? `?key=${apiKey}` : "";
     axios
-      .delete(`https://joblog-api.onrender.com/jobs/${id}`)
+      .delete(`https://joblog-api.onrender.com/jobs/${id}${query}`)
       .then(() => {
         setJobs((prevJobs) => prevJobs.filter((job) => job.id !== id));
       })
@@ -45,8 +46,9 @@ const JobList = ({ jobs, setJobs }) => {
   };
 
   const handleSave = () => {
+    const query = apiKey ? `?key=${apiKey}` : "";
     axios
-      .put(`https://joblog-api.onrender.com/jobs/${editJobId}`, editFormData)
+      .put(`https://joblog-api.onrender.com/jobs/${editJobId}${query}`, editFormData)
       .then((res) => {
         setJobs((prevJobs) =>
           prevJobs.map((job) => (job.id === editJobId ? res.data : job))

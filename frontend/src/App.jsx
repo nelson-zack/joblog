@@ -7,6 +7,9 @@ import ApplicationTrends from "./components/ApplicationTrends";
 function App() {
   const [jobs, setJobs] = useState([]);
 
+  // Extract API key from URL query string
+  const apiKey = new URLSearchParams(window.location.search).get("key");
+
   const handleJobAdded = (newJob) => {
     setJobs((prev) => [...prev, newJob]);
   };
@@ -21,9 +24,9 @@ function App() {
   return (
     <div className="min-h-screen bg-gray-100 p-8">
       <h1 className="text-2xl font-bold mb-6">Job Tracker</h1>
-      <JobForm onJobAdded={handleJobAdded} />
+      <JobForm onJobAdded={handleJobAdded} apiKey={apiKey} />
       <ApplicationTrends jobs={jobs} />
-      <JobList jobs={jobs} setJobs={setJobs} />
+      <JobList jobs={jobs} setJobs={setJobs} apiKey={apiKey} />
     </div>
   );
 }
