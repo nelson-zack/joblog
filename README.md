@@ -3,21 +3,21 @@
 A full-stack web app to track, organize, and analyze job applications — and the job tracker I personally use.
 
 ## ✨ Features (Completed)
-- ✅ Add new job applications via form
-- ✅ View all job applications in a clean UI
-- ✅ Delete applications from the list
-- ✅ Display job tags as styled pill badges
-- ✅ Edit job status, notes, and tags
-- ✅ Filter jobs by status and tag
-- ✅ Export applications to CSV
-- ✅ 7-day application trend chart (Bar graph)
-- ✅ Frontend interacts with backend via secure API key for write access
-- ✅ Public viewers can explore UI, but cannot modify data
-- ✅ React frontend communicates with FastAPI backend using Axios
-- ✅ Backend stores jobs in a PostgreSQL database using SQLAlchemy ORM
-- ✅ Tailwind CSS used for modern, responsive styling
-- ✅ Fully deployed frontend and backend (Vercel + Render)
-- ✅ Admin-only UI actions via API key query string
+- ✅ Add new job applications via form  
+- ✅ View all job applications in a clean UI  
+- ✅ Delete applications from the list  
+- ✅ Display job tags as styled pill badges  
+- ✅ Edit job status, notes, and tags  
+- ✅ Filter jobs by status and tag  
+- ✅ Export applications to CSV  
+- ✅ 7-day application trend chart (Bar graph)  
+- ✅ Admin-only editing via secure API key (public demo mode by default)  
+- ✅ “Demo Mode” banner shown to public visitors  
+- ✅ Loading spinner during backend startup (Render cold start)  
+- ✅ React frontend communicates with FastAPI backend using Axios  
+- ✅ Backend stores jobs in a PostgreSQL database using SQLAlchemy ORM  
+- ✅ Tailwind CSS used for modern, responsive styling  
+- ✅ Fully deployed frontend and backend (Vercel + Render)  
 
 ## 🚧 Features In Progress / Planned
 - 📊 Expanded analytics (monthly trends, interviews vs offers)
