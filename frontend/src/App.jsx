@@ -6,6 +6,7 @@ import ApplicationTrends from "./components/ApplicationTrends";
 
 function App() {
   const [jobs, setJobs] = useState([]);
+  const [loading, setLoading] = useState(true); // ⏳ New loading state
 
   // Extract API key from URL query string
   const apiKey = new URLSearchParams(window.location.search).get("key");
@@ -18,8 +19,17 @@ function App() {
     axios
       .get("https://joblog-api.onrender.com/jobs/")
       .then((response) => setJobs(response.data))
-      .catch((error) => console.error("Error fetching jobs:", error));
+      .catch((error) => console.error("Error fetching jobs:", error))
+      .finally(() => setLoading(false)); 
   }, []);
+
+  if (loading) {
+    return (
+      <div className="min-h-screen flex items-center justify-center text-lg text-gray-600">
+        Loading job data...
+      </div>
+    );
+  }
 
   return (
     <div className="min-h-screen bg-gray-100 p-8">
