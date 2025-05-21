@@ -1,4 +1,4 @@
-# Job Application Tracker
+# Job Log
 
 A full-stack web app to track, organize, and analyze job applications — and the job tracker I personally use.
 
@@ -11,7 +11,7 @@ A full-stack web app to track, organize, and analyze job applications — and th
 - ✅ Filter jobs by status and tag  
 - ✅ Export applications to CSV  
 - ✅ 7-day application trend chart (Bar graph)  
-- ✅ Admin-only editing via secure API key (public demo mode by default)  
+- ✅ Admin-only editing via secure API key (public visitors view in read-only demo mode)  
 - ✅ “Demo Mode” banner shown to public visitors  
 - ✅ Loading spinner during backend startup (Render cold start)  
 - ✅ React frontend communicates with FastAPI backend using Axios  
@@ -66,7 +66,7 @@ Backend API at: http://localhost:8000/docs
 
 ### 📁 Folder Structure
 ```bash
-job-app-tracker/
+joblog/
 ├── backend/
 │   ├── main.py
 │   ├── models.py
