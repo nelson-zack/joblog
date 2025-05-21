@@ -6,7 +6,7 @@ import ApplicationTrends from "./components/ApplicationTrends";
 
 function App() {
   const [jobs, setJobs] = useState([]);
-  const [loading, setLoading] = useState(true); // ⏳ New loading state
+  const [loading, setLoading] = useState(true);
 
   // Extract API key from URL query string
   const apiKey = new URLSearchParams(window.location.search).get("key");
@@ -20,13 +20,16 @@ function App() {
       .get("https://joblog-api.onrender.com/jobs/")
       .then((response) => setJobs(response.data))
       .catch((error) => console.error("Error fetching jobs:", error))
-      .finally(() => setLoading(false)); 
+      .finally(() => setLoading(false));
   }, []);
 
   if (loading) {
     return (
-      <div className="min-h-screen flex items-center justify-center text-lg text-gray-600">
-        Loading job data...
+      <div className="min-h-screen flex items-center justify-center">
+        <div className="flex flex-col items-center">
+          <div className="w-10 h-10 border-4 border-blue-500 border-t-transparent rounded-full animate-spin"></div>
+          <p className="mt-4 text-gray-600 text-sm">Loading job data...</p>
+        </div>
       </div>
     );
   }
