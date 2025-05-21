@@ -26,7 +26,7 @@ A full-stack web app to track, organize, and analyze job applications — and th
 
 ## 🔗 Live Demo
 
-- **Frontend**: https://joblog-app.vercel.app  
+- **Frontend**: https://joblog.zacknelson.dev  
 - **Backend API**: https://joblog-api.onrender.com
 
 ## 🛠 Tech Stack
