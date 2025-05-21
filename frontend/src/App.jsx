@@ -40,6 +40,14 @@ function App() {
       <JobForm onJobAdded={handleJobAdded} apiKey={apiKey} />
       <ApplicationTrends jobs={jobs} />
       <JobList jobs={jobs} setJobs={setJobs} apiKey={apiKey} />
+
+      {!apiKey && (
+        <div className="mt-6 text-center text-sm text-gray-500">
+          <span className="inline-block bg-yellow-100 text-yellow-800 px-3 py-1 rounded">
+            Demo mode: editing requires admin access
+          </span>
+        </div>
+      )}
     </div>
   );
 }
