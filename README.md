@@ -2,34 +2,34 @@
 
 A full-stack web app to track, organize, and analyze job applications — and the job tracker I personally use.
 
-## ✨ Features (Completed)
-- ✅ Add new job applications via form  
-- ✅ View all job applications in a clean UI  
-- ✅ Delete applications from the list  
-- ✅ Display job tags as styled pill badges  
-- ✅ Edit job status, notes, and tags  
-- ✅ Filter jobs by status and tag  
-- ✅ Export applications to CSV  
-- ✅ 7-day application trend chart (Bar graph)  
-- ✅ Admin-only editing via secure API key (public visitors view in read-only demo mode)  
-- ✅ “Demo Mode” banner shown to public visitors  
-- ✅ Loading spinner during backend startup (Render cold start)  
-- ✅ React frontend communicates with FastAPI backend using Axios  
-- ✅ Backend stores jobs in a PostgreSQL database using SQLAlchemy ORM  
-- ✅ Tailwind CSS used for modern, responsive styling  
-- ✅ Fully deployed frontend and backend (Vercel + Render)  
+## Features (Completed)
+- Add new job applications via form  
+- View all job applications in a clean UI  
+- Delete applications from the list  
+- Display job tags as styled pill badges  
+- Edit job status, notes, and tags  
+- Filter jobs by status and tag  
+- Export applications to CSV  
+- 7-day application trend chart (Bar graph)  
+- Admin-only editing via secure API key (public visitors view in read-only demo mode)  
+- “Demo Mode” banner shown to public visitors  
+- Loading spinner during backend startup (Render cold start)  
+- React frontend communicates with FastAPI backend using Axios  
+- Backend stores jobs in a PostgreSQL database using SQLAlchemy ORM  
+- Tailwind CSS used for modern, responsive styling  
+- Fully deployed frontend and backend (Vercel + Render)  
 
-## 🚧 Features In Progress / Planned
-- 📊 Expanded analytics (monthly trends, interviews vs offers)
-- 🤖 AI tools for summarizing job descriptions and generating cover letters
-- 📥 CSV import for bulk uploads
+## Features In Progress / Planned
+- Expanded analytics (monthly trends, interviews vs offers)
+- AI tools for summarizing job descriptions and generating cover letters
+- CSV import for bulk uploads
 
-## 🔗 Live Demo
+## Live Demo
 
 - **Frontend**: https://joblog.zacknelson.dev  
 - **Backend API**: https://joblog-api.onrender.com
 
-## 🛠 Tech Stack
+## Tech Stack
 - **Frontend:** React + Tailwind CSS (Vite)
 - **Backend:** FastAPI (Python)
 - **Database:** PostgreSQL (Render), SQLite (local dev)
@@ -38,7 +38,7 @@ A full-stack web app to track, organize, and analyze job applications — and th
 
 ---
 
-## ✅ Getting Started (Local Dev)
+## Getting Started (Local Dev)
 
 ### Backend (FastAPI)
 
@@ -50,7 +50,7 @@ pip install -r requirements.txt
 uvicorn main:app --reload
 ```
 
-### ⚠️ Create a .env file inside /backend with:
+### Create a .env file inside /backend with:
 ```bash
 API_KEY=your_secret_key_here
 ```
@@ -64,7 +64,7 @@ npm run dev
 App runs at: http://localhost:5173
 Backend API at: http://localhost:8000/docs
 
-### 📁 Folder Structure
+### Folder Structure
 ```bash
 joblog/
 ├── backend/
@@ -88,18 +88,18 @@ joblog/
 └── README.md
 ```
 
-## 📅 Milestone Plan
+## Milestone Plan
 
-### ✅ Week 1 – MVP
+### Week 1 – MVP
 - Basic CRUD (add/delete jobs)
 - React + FastAPI + SQLite local setup
 
-### ✅ Week 2 – UI Polish & Filtering
+### Week 2 – UI Polish & Filtering
 - Tailwind styling + layout cleanup
 - Tag pill display
 - Status + tag filtering
 
-### ✅ Week 3 – “Wow” Features
+### Week 3 – “Wow” Features
 - Deployed frontend (Vercel) + backend (Render)
 - Switched backend to PostgreSQL with persistent storage
 - Added analytics dashboard (stats + bar chart)
@@ -107,7 +107,7 @@ joblog/
 - API key-based write protection
 - Improved README for portfolio visibility
 
-## 💼 Portfolio Write-up
+## Portfolio Write-up
 
 I built this project to manage my real job applications and track my career outreach in a clean, centralized tool. I wanted something lightweight, easy to use, and built with tools I’m learning professionally.
 
