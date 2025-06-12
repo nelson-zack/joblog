@@ -11,10 +11,16 @@ load_dotenv()
 
 app = FastAPI()
 
+origins = [
+    "http://localhost:5173",
+    "https://joblog.zacknelson.dev"
+]
+
+
 # CORS config
 app.add_middleware(
     CORSMiddleware,
-    allow_origins=["https://joblog.zacknelson.dev"],
+    allow_origins=origins,
     allow_credentials=True,
     allow_methods=["*"],
     allow_headers=["*"],
@@ -45,7 +51,9 @@ def read_root():
 
 @app.post("/jobs/", response_model=schemas.JobOut, dependencies=[Depends(verify_api_key)])
 def create_job(job: schemas.JobCreate, db: Session = Depends(get_db)):
-    db_job = models.Job(**job.dict())
+    job_data = job.dict()
+    job_data["status_history"] = job_data.get("status_history", [])
+    db_job = models.Job(**job_data)
     db.add(db_job)
     db.commit()
     db.refresh(db_job)
@@ -70,7 +78,13 @@ def update_job(job_id: int, updated_job: schemas.JobCreate, db: Session = Depend
     if not job:
         return {"error": "Job not found"}
     
-    for key, value in updated_job.dict().items():
+    updated_data = updated_job.dict()
+    if updated_data["status"] != job.status:
+        job.status_history.append({
+            "status": updated_data["status"],
+            "date": updated_data.get("date_applied") or job.date_applied
+        })
+    for key, value in updated_data.items():
         setattr(job, key, value)
 
     db.commit()

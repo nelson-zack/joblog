@@ -1,6 +1,8 @@
 import React, { useEffect, useState } from "react";
 import axios from "axios";
 
+const BASE_URL = import.meta.env.VITE_API_BASE_URL;
+
 const JobList = ({ jobs, setJobs }) => {
   const [editJobId, setEditJobId] = useState(null);
   const [editFormData, setEditFormData] = useState({
@@ -11,6 +13,7 @@ const JobList = ({ jobs, setJobs }) => {
     date_applied: "",
     notes: "",
     tags: "",
+    status_history: [],
   });
 
   const [statusFilter, setStatusFilter] = useState("All");
@@ -22,7 +25,7 @@ const JobList = ({ jobs, setJobs }) => {
   const handleDelete = (id) => {
     const query = apiKey ? `?key=${apiKey}` : "";
     axios
-      .delete(`https://joblog-api.onrender.com/jobs/${id}${query}`)
+      .delete(`${BASE_URL}/jobs/${id}${query}`)
       .then(() => {
         setJobs((prevJobs) => prevJobs.filter((job) => job.id !== id));
       })
@@ -48,8 +51,14 @@ const JobList = ({ jobs, setJobs }) => {
 
   const handleSave = () => {
     const query = apiKey ? `?key=${apiKey}` : "";
+    const original = jobs.find(job => job.id === editJobId);
+    const updatedHistory = [...(editFormData.status_history || [])];
+
+    if (editFormData.status !== original.status) {
+      updatedHistory.push({ status: editFormData.status, date: new Date().toISOString().split("T")[0] });
+    }
     axios
-      .put(`https://joblog-api.onrender.com/jobs/${editJobId}${query}`, editFormData)
+      .put(`${BASE_URL}/jobs/${editJobId}${query}`, { ...editFormData, status_history: updatedHistory })
       .then((res) => {
         setJobs((prevJobs) =>
           prevJobs.map((job) => (job.id === editJobId ? res.data : job))
@@ -83,9 +92,18 @@ const JobList = ({ jobs, setJobs }) => {
   };
 
   const total = jobs.length;
-  const interviewing = jobs.filter((job) => job.status === "Interviewing").length;
-  const offers = jobs.filter((job) => job.status === "Offer").length;
-  const rejections = jobs.filter((job) => job.status === "Rejected").length;
+  const interviewing = jobs.filter((job) =>
+    job.status === "Interviewing" ||
+    (Array.isArray(job.status_history) && job.status_history.some(s => s.status === "Interviewing"))
+  ).length;
+  const offers = jobs.filter((job) =>
+    job.status === "Offer" ||
+    (Array.isArray(job.status_history) && job.status_history.some(s => s.status === "Offer"))
+  ).length;
+  const rejections = jobs.filter((job) =>
+    job.status === "Rejected" ||
+    (Array.isArray(job.status_history) && job.status_history.some(s => s.status === "Rejected"))
+  ).length;
   const applied = jobs.filter((job) => job.status === "Applied").length;
   const offerRate = total > 0 ? `${((offers / total) * 100).toFixed(1)}%` : "0%";
 
@@ -139,6 +157,7 @@ const JobList = ({ jobs, setJobs }) => {
             const matchesTag = tagFilter === "All" || (job.tags && job.tags.split(",").includes(tagFilter));
             return matchesStatus && matchesTag;
           })
+          .sort((a, b) => new Date(b.date_applied) - new Date(a.date_applied))
           .map((job) => (
             <li key={`${job.id}-${job.tags}`} className="p-4 border rounded shadow bg-white text-left">
               <div className="flex justify-between items-start">
@@ -178,6 +197,13 @@ const JobList = ({ jobs, setJobs }) => {
                         </a>
                       </div>
                       <div>Status: {job.status}</div>
+                      {job.status_history?.length > 0 && (
+                        <div className="text-xs text-gray-500 mt-1">
+                          {job.status_history.map((s, i) => (
+                            <div key={i}>{s.status} on {s.date}</div>
+                          ))}
+                        </div>
+                      )}
                       <div>Date Applied: {job.date_applied}</div>
                       <div className="text-gray-700">Notes: {job.notes}</div>
                       {job.tags && (

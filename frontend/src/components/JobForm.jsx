@@ -9,6 +9,7 @@ const JobForm = ({ onJobAdded, apiKey }) => {
     status: "Applied",
     date_applied: "",
     notes: "",
+    status_history: [],
   });
 
   const tagOptions = ["Remote", "Referral", "Urgent", "Startup"];
@@ -23,9 +24,15 @@ const JobForm = ({ onJobAdded, apiKey }) => {
     const query = apiKey ? `?key=${apiKey}` : "";
 
     axios
-      .post(`https://joblog-api.onrender.com/jobs/${query}`, {
+      .post(`${import.meta.env.VITE_API_BASE_URL}/jobs/${query}`, {
         ...formData,
         tags: selectedTags.join(","),
+        status_history: [
+          {
+            status: formData.status,
+            date: formData.date_applied || new Date().toISOString().split("T")[0],
+          },
+        ],
       })
       .then((res) => {
         onJobAdded(res.data);
@@ -36,6 +43,7 @@ const JobForm = ({ onJobAdded, apiKey }) => {
           status: "Applied",
           date_applied: "",
           notes: "",
+          status_history: [],
         });
         setSelectedTags([]);
       })

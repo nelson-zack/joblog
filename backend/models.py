@@ -1,4 +1,5 @@
 from sqlalchemy import Column, Integer, String, Date
+from sqlalchemy.dialects.sqlite import JSON
 from database import Base
 
 class Job(Base):
@@ -12,3 +13,4 @@ class Job(Base):
     date_applied = Column(String)  
     notes = Column(String)
     tags = Column(String)  # comma-separated values (e.g., "remote,referral")
+    status_history = Column(JSON, default=list)
