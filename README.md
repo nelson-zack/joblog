@@ -10,9 +10,11 @@ A full-stack web app to track, organize, and analyze job applications — and th
 - Edit job status, notes, and tags  
 - Filter jobs by status and tag  
 - Export applications to CSV  
-- 7-day application trend chart (Bar graph)  
-- Admin-only editing via secure API key (public visitors view in read-only demo mode)  
-- “Demo Mode” banner shown to public visitors  
+- 7-day application trend chart (Bar graph)
+- Status history tracking (every status change is logged)
+- Enhanced analytics (based on full status history, not just current state)
+- Admin-only editing via secure API key (public visitors view in read-only demo mode)
+- “Demo Mode” banner shown to public visitors
 - Loading spinner during backend startup (Render cold start)  
 - React frontend communicates with FastAPI backend using Axios  
 - Backend stores jobs in a PostgreSQL database using SQLAlchemy ORM  
@@ -20,7 +22,8 @@ A full-stack web app to track, organize, and analyze job applications — and th
 - Fully deployed frontend and backend (Vercel + Render)  
 
 ## Features In Progress / Planned
-- Expanded analytics (monthly trends, interviews vs offers)
+- Monthly trend analytics
+- Interview/offer timeline graphs
 - AI tools for summarizing job descriptions and generating cover letters
 - CSV import for bulk uploads
 
@@ -124,5 +127,7 @@ React (Vite) for the frontend, FastAPI for the backend, and PostgreSQL for persi
 - Creating basic data visualizations using Chart.js
 - Exporting frontend state as downloadable CSV
 - Using environment variables and API keys to protect write access
+- Schema migrations and production-safe database updates
+- Persistent status history implementation and frontend integration
 
 I use this tool personally and will continue building on it as part of my ongoing growth.
