@@ -19,6 +19,9 @@ A full-stack web app to track, organize, and analyze job applications — and th
 - React frontend communicates with FastAPI backend using Axios  
 - Backend stores jobs in a PostgreSQL database using SQLAlchemy ORM  
 - Tailwind CSS used for modern, responsive styling  
+- Dark mode support with Tailwind's `dark:` variant
+- User toggle with localStorage persistence
+- Auto-sync with system theme preference
 - Fully deployed frontend and backend (Vercel + Render)  
 
 ## Features In Progress / Planned
@@ -38,6 +41,7 @@ A full-stack web app to track, organize, and analyze job applications — and th
 - **Database:** PostgreSQL (Render), SQLite (local dev)
 - **Dev Tools:** Axios, GitHub, VS Code, Chart.js
 - **Deployment:** Vercel (frontend) + Render (backend + DB)
+- UptimeRobot pings the backend every 30 seconds to prevent cold starts and ensure fast response times
 
 ---
 
@@ -129,5 +133,6 @@ React (Vite) for the frontend, FastAPI for the backend, and PostgreSQL for persi
 - Using environment variables and API keys to protect write access
 - Schema migrations and production-safe database updates
 - Persistent status history implementation and frontend integration
+- Implementing dark mode with Tailwind and persisting user preference with localStorage
 
-I use this tool personally and will continue building on it as part of my ongoing growth.
+I use this tool personally and will continue building on it as part of my ongoing growth. To improve performance and avoid cold starts, I set up a UptimeRobot ping monitor that keeps the backend service responsive.

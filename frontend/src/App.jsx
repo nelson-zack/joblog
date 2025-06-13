@@ -7,6 +7,9 @@ import ApplicationTrends from "./components/ApplicationTrends";
 function App() {
   const [jobs, setJobs] = useState([]);
   const [loading, setLoading] = useState(true);
+  const [darkMode, setDarkMode] = useState(() => {
+    return localStorage.getItem("darkMode") === "true";
+  }); // New state for dark mode
 
   // Extract API key from URL query string
   const apiKey = new URLSearchParams(window.location.search).get("key");
@@ -23,6 +26,15 @@ function App() {
       .finally(() => setLoading(false));
   }, []);
 
+  useEffect(() => {
+    if (darkMode) {
+      document.documentElement.classList.add("dark");
+    } else {
+      document.documentElement.classList.remove("dark");
+    }
+    localStorage.setItem("darkMode", darkMode);
+  }, [darkMode]);
+
   if (loading) {
     return (
       <div className="min-h-screen flex items-center justify-center">
@@ -35,15 +47,24 @@ function App() {
   }
 
   return (
-    <div className="min-h-screen bg-gray-100 p-8">
-      <h1 className="text-2xl font-bold mb-6">Job Tracker</h1>
+    <div className="min-h-screen bg-gray-100 dark:bg-gray-900 text-gray-900 dark:text-gray-100 p-8">
+      <div className="flex justify-between items-center mb-6">
+        <h1 className="text-2xl font-bold">Job Tracker</h1>
+        <button
+          onClick={() => setDarkMode(!darkMode)}
+          className="text-sm border px-3 py-1 rounded dark:border-gray-600"
+        >
+          {darkMode ? "Light Mode" : "Dark Mode"}
+        </button>
+      </div>
+
       <JobForm onJobAdded={handleJobAdded} apiKey={apiKey} />
       <ApplicationTrends jobs={jobs} />
       <JobList jobs={jobs} setJobs={setJobs} apiKey={apiKey} />
 
       {!apiKey && (
-        <div className="mt-6 text-center text-sm text-gray-500">
-          <span className="inline-block bg-yellow-100 text-yellow-800 px-3 py-1 rounded">
+        <div className="mt-6 text-center text-sm text-gray-500 dark:text-gray-400">
+          <span className="inline-block bg-yellow-100 text-yellow-800 dark:bg-yellow-900 dark:text-yellow-200 px-3 py-1 rounded">
             Demo mode: editing requires admin access
           </span>
         </div>
