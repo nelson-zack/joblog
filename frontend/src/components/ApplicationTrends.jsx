@@ -17,18 +17,19 @@ const ApplicationTrends = ({ jobs }) => {
     jobs.filter((job) => job.date_applied === day).length
   );
 
+  const [isDarkMode, setIsDarkMode] = useState(document.documentElement.classList.contains("dark"));
+
   const data = {
     labels: last7Days,
     datasets: [
       {
         label: "Applications",
         data: countsByDate,
-        backgroundColor: "#3b82f6",
+        backgroundColor: isDarkMode ? "#06b6d4" : "#8E9775",
+        hoverBackgroundColor: isDarkMode ? "#22d3ee" : "#7c8667",
       },
     ],
   };
-
-  const [isDarkMode, setIsDarkMode] = useState(document.documentElement.classList.contains("dark"));
 
   useEffect(() => {
     const observer = new MutationObserver(() => {
@@ -50,36 +51,42 @@ const ApplicationTrends = ({ jobs }) => {
       title: {
         display: true,
         text: "Job Applications - Last 7 Days",
-        font: { size: 16, weight: 'bold' },
-        color: isDarkMode ? "#e5e7eb" : "#1f2937",
+        font: { size: 16, weight: 'bold', family: isDarkMode ? "monospace" : undefined },
+        color: isDarkMode ? "#e5e7eb" : "#3b3b3b",
       },
     },
     scales: {
       x: {
         ticks: {
-          color: isDarkMode ? "#e5e7eb" : "#1f2937",
-          font: { size: 12 }
+          color: isDarkMode ? "#e5e7eb" : "#3b3b3b",
+          font: { size: 10, family: isDarkMode ? "monospace" : undefined }
         },
         grid: {
-          color: isDarkMode ? "#6b7280" : "#d1d5db",
+          color: isDarkMode ? "#e5e7eb" : "#E5E5E0",
         },
       },
       y: {
         beginAtZero: true,
         ticks: {
           stepSize: 1,
-          color: isDarkMode ? "#e5e7eb" : "#1f2937",
-          font: { size: 12 }
+          color: isDarkMode ? "#e5e7eb" : "#3b3b3b",
+          font: { size: 10, family: isDarkMode ? "monospace" : undefined }
         },
         grid: {
-          color: isDarkMode ? "#6b7280" : "#d1d5db",
+          color: isDarkMode ? "#e5e7eb" : "#E5E5E0",
         },
       },
     },
   };
 
   return (
-    <div className="mb-8 bg-white dark:bg-gray-900 p-4 rounded shadow" style={{ height: '300px' }}>
+    <div
+      className={
+        "mb-8 bg-[#F9F9F6] dark:bg-[#101010] p-4 rounded shadow" +
+        (isDarkMode ? " font-mono" : "")
+      }
+      style={{ height: '300px' }}
+    >
       <Bar data={data} options={options} />
     </div>
   );

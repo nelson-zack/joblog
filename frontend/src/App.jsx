@@ -39,7 +39,7 @@ function App() {
     return (
       <div className="min-h-screen flex items-center justify-center">
         <div className="flex flex-col items-center">
-          <div className="w-10 h-10 border-4 border-blue-500 border-t-transparent rounded-full animate-spin"></div>
+          <div className="w-10 h-10 border-4 border-cyan-500 border-t-transparent rounded-full animate-spin"></div>
           <p className="mt-4 text-gray-600 text-sm">Loading job data...</p>
         </div>
       </div>
@@ -47,15 +47,17 @@ function App() {
   }
 
   return (
-    <div className="min-h-screen bg-gray-100 dark:bg-gray-900 text-gray-900 dark:text-gray-100 p-8">
-      <div className="flex justify-between items-center mb-6">
-        <h1 className="text-2xl font-bold">Job Tracker</h1>
-        <button
-          onClick={() => setDarkMode(!darkMode)}
-          className="text-sm border px-3 py-1 rounded dark:border-gray-600"
-        >
-          {darkMode ? "Light Mode" : "Dark Mode"}
-        </button>
+    <div className="min-h-screen bg-light-background text-light-text dark:bg-dark-background dark:text-dark-text dark:font-mono p-8 transition-colors duration-500 ease-in-out">
+      <div className="bg-light-card dark:bg-dark-card rounded-xl shadow-sm p-6 mb-6 transition-colors duration-500">
+        <div className="flex justify-between items-center mb-6">
+          <h1 className="text-2xl font-bold">Job Log</h1>
+          <button
+            onClick={() => setDarkMode(!darkMode)}
+            className="text-sm border px-3 py-1 rounded border-light-accent dark:border-dark-accent hover:bg-light-accent hover:text-white dark:hover:bg-dark-card dark:hover:shadow-[0_0_10px_#22d3ee] transition focus:outline-none focus:ring-2 focus:ring-light-accent dark:focus:ring-dark-accent"
+          >
+            {darkMode ? "Light Mode" : "Dark Mode"}
+          </button>
+        </div>
       </div>
 
       <JobForm onJobAdded={handleJobAdded} apiKey={apiKey} />
@@ -64,7 +66,7 @@ function App() {
 
       {!apiKey && (
         <div className="mt-6 text-center text-sm text-gray-500 dark:text-gray-400">
-          <span className="inline-block bg-yellow-100 text-yellow-800 dark:bg-yellow-900 dark:text-yellow-200 px-3 py-1 rounded">
+          <span className="inline-block bg-light-tag-remoteBg text-light-accent dark:bg-dark-card dark:text-dark-tag-text px-3 py-1 rounded border border-light-accent">
             Demo mode: editing requires admin access
           </span>
         </div>
