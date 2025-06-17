@@ -19,8 +19,9 @@ A full-stack web app to track, organize, and analyze job applications — and th
 - React frontend communicates with FastAPI backend using Axios  
 - Backend stores jobs in a PostgreSQL database using SQLAlchemy ORM  
 - Tailwind CSS used for modern, responsive styling  
-- Dark mode support with Tailwind's `dark:` variant
-- User toggle with localStorage persistence
+- Light and dark themes use distinct font, color, and tag styles for cohesive design
+- Custom dark mode theme styled to match personal portfolio design
+- User theme toggle with localStorage persistence and system sync
 - Auto-sync with system theme preference
 - Fully deployed frontend and backend (Vercel + Render)  
 
@@ -134,5 +135,6 @@ React (Vite) for the frontend, FastAPI for the backend, and PostgreSQL for persi
 - Schema migrations and production-safe database updates
 - Persistent status history implementation and frontend integration
 - Implementing dark mode with Tailwind and persisting user preference with localStorage
+- Designing custom light and dark mode themes with consistent color palettes and typography
 
 I use this tool personally and will continue building on it as part of my ongoing growth. To improve performance and avoid cold starts, I set up a UptimeRobot ping monitor that keeps the backend service responsive.
