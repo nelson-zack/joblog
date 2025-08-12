@@ -3,29 +3,34 @@
 A full-stack web app to track, organize, and analyze job applications — and the job tracker I personally use.
 
 ## Features (Completed)
-- Add new job applications via form  
-- View all job applications in a clean UI  
-- Delete applications from the list  
-- Display job tags as styled pill badges  
-- Edit job status, notes, and tags  
-- Filter jobs by status and tag  
-- Export applications to CSV  
+
+- Add new job applications via form
+- View all job applications in a clean UI
+- Delete applications from the list
+- Display job tags as styled pill badges
+- Edit job status, notes, and tags
+- Filter jobs by status and tag
+- Export applications to CSV
 - 7-day application trend chart (Bar graph)
 - Status history tracking (every status change is logged)
 - Enhanced analytics (based on full status history, not just current state)
 - Admin-only editing via secure API key (public visitors view in read-only demo mode)
 - “Demo Mode” banner shown to public visitors
-- Loading spinner during backend startup (Render cold start)  
-- React frontend communicates with FastAPI backend using Axios  
-- Backend stores jobs in a PostgreSQL database using SQLAlchemy ORM  
-- Tailwind CSS used for modern, responsive styling  
+- Loading spinner during backend startup (Render cold start)
+- React frontend communicates with FastAPI backend using Axios
+- Backend stores jobs in a PostgreSQL database using SQLAlchemy ORM
+- Tailwind CSS used for modern, responsive styling
 - Light and dark themes use distinct font, color, and tag styles for cohesive design
 - Custom dark mode theme styled to match personal portfolio design
 - User theme toggle with localStorage persistence and system sync
 - Auto-sync with system theme preference
-- Fully deployed frontend and backend (Vercel + Render)  
+- Fully deployed frontend and backend (Vercel + Render)
+  - Automatic normalization of job dates, tags, and status history entries to ensure consistent formatting in both frontend and backend.
+  - Tag deduplication logic prevents repeated tags on the same job.
+  - Unified input field styling across all form elements, including a styled date picker with calendar icon and consistent focus states matching the light/dark theme accents.
 
 ## Features In Progress / Planned
+
 - Monthly trend analytics
 - Interview/offer timeline graphs
 - AI tools for summarizing job descriptions and generating cover letters
@@ -33,10 +38,11 @@ A full-stack web app to track, organize, and analyze job applications — and th
 
 ## Live Demo
 
-- **Frontend**: https://joblog.zacknelson.dev  
+- **Frontend**: https://joblog.zacknelson.dev
 - **Backend API**: https://joblog-api.onrender.com
 
 ## Tech Stack
+
 - **Frontend:** React + Tailwind CSS (Vite)
 - **Backend:** FastAPI (Python)
 - **Database:** PostgreSQL (Render), SQLite (local dev)
@@ -59,20 +65,24 @@ uvicorn main:app --reload
 ```
 
 ### Create a .env file inside /backend with:
+
 ```bash
 API_KEY=your_secret_key_here
 ```
 
 ### Frontend (React)
+
 ```bash
 cd frontend
 npm install
 npm run dev
 ```
+
 App runs at: http://localhost:5173
 Backend API at: http://localhost:8000/docs
 
 ### Folder Structure
+
 ```bash
 joblog/
 ├── backend/
@@ -99,15 +109,18 @@ joblog/
 ## Milestone Plan
 
 ### Week 1 – MVP
+
 - Basic CRUD (add/delete jobs)
 - React + FastAPI + SQLite local setup
 
 ### Week 2 – UI Polish & Filtering
+
 - Tailwind styling + layout cleanup
 - Tag pill display
 - Status + tag filtering
 
 ### Week 3 – “Wow” Features
+
 - Deployed frontend (Vercel) + backend (Render)
 - Switched backend to PostgreSQL with persistent storage
 - Added analytics dashboard (stats + bar chart)
@@ -123,11 +136,12 @@ I built this project to manage my real job applications and track my career outr
 React (Vite) for the frontend, FastAPI for the backend, and PostgreSQL for persistent storage. I used Tailwind CSS to keep the styling efficient and modern.
 
 **What I learned:**
-- End-to-end full-stack deployment using Vercel + Render  
-- Working with Axios, `useEffect`, form state, and controlled inputs in React  
-- Creating and consuming REST APIs with FastAPI  
-- Connecting FastAPI to PostgreSQL using SQLAlchemy ORM  
-- Handling CORS and async fetch logic  
+
+- End-to-end full-stack deployment using Vercel + Render
+- Working with Axios, `useEffect`, form state, and controlled inputs in React
+- Creating and consuming REST APIs with FastAPI
+- Connecting FastAPI to PostgreSQL using SQLAlchemy ORM
+- Handling CORS and async fetch logic
 - Styling with Tailwind for clean, responsive UIs
 - Creating basic data visualizations using Chart.js
 - Exporting frontend state as downloadable CSV
