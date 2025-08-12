@@ -2,6 +2,8 @@ from fastapi import FastAPI, Depends, HTTPException, Request
 from fastapi.middleware.cors import CORSMiddleware
 from sqlalchemy.orm import Session
 import os
+import re
+from datetime import date
 
 from database import Base, engine, SessionLocal
 import models
@@ -45,6 +47,37 @@ def verify_api_key(request: Request):
     if key != API_KEY:
         raise HTTPException(status_code=401, detail="Unauthorized")
 
+# === Normalization Helpers ===
+_DATE_RE = re.compile(r"^(\d{4})[-/](\d{1,2})[-/](\d{1,2})$")
+
+def normalize_ymd(s: str | None) -> str | None:
+    """
+    Accepts 'YYYY-MM-DD' or 'YYYY/M/D' or 'YYYY-MM-D' variants and returns strict 'YYYY-MM-DD'.
+    Returns None on invalid input (including impossible dates).
+    """
+    if not s:
+        return None
+    m = _DATE_RE.match(s.strip())
+    if not m:
+        return None
+    y, mo, d = map(int, m.groups())
+    try:
+        return date(y, mo, d).strftime("%Y-%m-%d")
+    except ValueError:
+        return None
+
+def normalize_tags(csv: str | None) -> str:
+    """
+    Trim and dedupe tags in a comma-separated list.
+    """
+    if not csv:
+        return ""
+    seen = []
+    for t in (x.strip() for x in csv.split(",")):
+        if t and t not in seen:
+            seen.append(t)
+    return ",".join(seen)
+
 @app.get("/")
 def read_root():
     return {"message": "Job Tracker API is live"}
@@ -52,7 +85,24 @@ def read_root():
 @app.post("/jobs/", response_model=schemas.JobOut, dependencies=[Depends(verify_api_key)])
 def create_job(job: schemas.JobCreate, db: Session = Depends(get_db)):
     job_data = job.dict()
-    job_data["status_history"] = job_data.get("status_history", [])
+
+    # Normalize date_applied
+    date_norm = normalize_ymd(job_data.get("date_applied")) or date.today().strftime("%Y-%m-%d")
+    job_data["date_applied"] = date_norm
+
+    # Normalize status_history dates; ensure structure is consistent
+    raw_hist = job_data.get("status_history") or []
+    norm_hist = []
+    for entry in raw_hist:
+        status_val = entry.get("status")
+        date_val = normalize_ymd(entry.get("date")) or date_norm
+        if status_val:
+            norm_hist.append({"status": status_val, "date": date_val})
+    job_data["status_history"] = norm_hist
+
+    # Normalize tags
+    job_data["tags"] = normalize_tags(job_data.get("tags"))
+
     db_job = models.Job(**job_data)
     db.add(db_job)
     db.commit()
@@ -77,13 +127,38 @@ def update_job(job_id: int, updated_job: schemas.JobCreate, db: Session = Depend
     job = db.query(models.Job).get(job_id)
     if not job:
         return {"error": "Job not found"}
-    
+
     updated_data = updated_job.dict()
-    if updated_data["status"] != job.status:
-        job.status_history.append({
-            "status": updated_data["status"],
-            "date": updated_data.get("date_applied") or job.date_applied
-        })
+
+    # Normalize tags
+    updated_data["tags"] = normalize_tags(updated_data.get("tags"))
+
+    # Normalize date_applied if provided; otherwise keep existing
+    if updated_data.get("date_applied") is not None:
+        date_norm = normalize_ymd(updated_data.get("date_applied")) or job.date_applied or date.today().strftime("%Y-%m-%d")
+        updated_data["date_applied"] = date_norm
+    else:
+        date_norm = job.date_applied or date.today().strftime("%Y-%m-%d")
+
+    # Normalize any provided status_history entries
+    raw_hist = updated_data.get("status_history") or []
+    norm_hist = []
+    for entry in raw_hist:
+        status_val = entry.get("status")
+        date_val = normalize_ymd(entry.get("date")) or date_norm
+        if status_val:
+            norm_hist.append({"status": status_val, "date": date_val})
+    updated_data["status_history"] = norm_hist
+
+    # If status changed, append a history entry with today's (or date_applied) date
+    if updated_data.get("status") is not None and updated_data["status"] != job.status:
+        append_date = date_norm or date.today().strftime("%Y-%m-%d")
+        # Ensure existing history is a list
+        if not isinstance(job.status_history, list):
+            job.status_history = []
+        job.status_history.append({"status": updated_data["status"], "date": append_date})
+
+    # Apply updates
     for key, value in updated_data.items():
         setattr(job, key, value)
 
