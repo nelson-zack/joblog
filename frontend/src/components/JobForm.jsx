@@ -28,6 +28,12 @@ const JobForm = ({ onJobAdded, apiKey }) => {
   const tagOptions = ['Remote', 'Referral', 'Urgent', 'Startup'];
   const [selectedTags, setSelectedTags] = useState([]);
 
+  // Reusable input styles (keeps consistency and uses theme accents on focus)
+  const inputBase =
+    'p-2 border rounded bg-light-background dark:bg-dark-card text-light-text dark:text-dark-text focus:outline-none focus:ring-2 focus:ring-light-accent focus:border-light-accent dark:focus:ring-dark-accent dark:focus:border-dark-accent';
+  const selectBase = inputBase;
+  const textAreaBase = inputBase;
+
   const handleChange = (e) => {
     setFormData({ ...formData, [e.target.name]: e.target.value });
   };
@@ -82,7 +88,7 @@ const JobForm = ({ onJobAdded, apiKey }) => {
           onChange={handleChange}
           placeholder='Job Title'
           required
-          className='p-2 border rounded bg-light-background text-light-text dark:bg-dark-card dark:text-dark-text'
+          className={inputBase}
         />
         <input
           name='company'
@@ -90,27 +96,37 @@ const JobForm = ({ onJobAdded, apiKey }) => {
           onChange={handleChange}
           placeholder='Company'
           required
-          className='p-2 border rounded bg-light-background text-light-text dark:bg-dark-card dark:text-dark-text'
+          className={inputBase}
         />
         <input
           name='link'
           value={formData.link}
           onChange={handleChange}
           placeholder='Job Link'
-          className='p-2 border rounded bg-light-background text-light-text dark:bg-dark-card dark:text-dark-text'
+          className={inputBase}
         />
         <input
           type='date'
           name='date_applied'
           value={formData.date_applied}
           onChange={handleChange}
-          className='p-2 border rounded bg-light-background text-light-text dark:bg-dark-card dark:text-dark-text'
+          placeholder='mm/dd/yyyy'
+          className={[
+            inputBase,
+            // when empty, use hint grey like other placeholders
+            !formData.date_applied ? 'text-gray-400 dark:text-gray-400' : '',
+            // calendar icon visibility & pointer (webkit)
+            '[&::-webkit-calendar-picker-indicator]:opacity-60',
+            'dark:[&::-webkit-calendar-picker-indicator]:opacity-90',
+            'dark:[&::-webkit-calendar-picker-indicator]:invert',
+            '[&::-webkit-calendar-picker-indicator]:cursor-pointer'
+          ].join(' ')}
         />
         <select
           name='status'
           value={formData.status}
           onChange={handleChange}
-          className='p-2 border rounded bg-light-background text-light-text dark:bg-dark-card dark:text-dark-text'
+          className={selectBase}
         >
           <option value='Applied'>Applied</option>
           <option value='Interviewing'>Interviewing</option>
@@ -123,7 +139,7 @@ const JobForm = ({ onJobAdded, apiKey }) => {
           onChange={handleChange}
           placeholder='Notes'
           rows={3}
-          className='p-2 border rounded bg-light-background text-light-text dark:bg-dark-card dark:text-dark-text'
+          className={textAreaBase}
         />
         <div>
           <label className='font-semibold'>Tags:</label>
