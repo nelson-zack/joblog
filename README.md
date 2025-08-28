@@ -81,6 +81,17 @@ npm run dev
 App runs at: http://localhost:5173
 Backend API at: http://localhost:8000/docs
 
+### Debugging Timezones Locally
+
+You can simulate different "current times" in the frontend using the `debugNow` query parameter.  
+Example:
+
+```
+http://localhost:5173/?debugNow=2025-08-28T19:30:00
+```
+
+This is useful for testing how the 7-day trend chart buckets applications across days and verifying that date rollovers align with your local timezone. In production, this parameter is ignored.
+
 ### Folder Structure
 
 ```bash
