@@ -1,7 +1,25 @@
+/**
+ * JobForm
+ * --------
+ * Lightweight controlled form for creating a Job.
+ * - Normalizes dates to strict YYYY-MM-DD (local time for "today" defaults).
+ * - Emits the created job via onJobAdded after a successful POST.
+ * - Stores tags as a comma-separated string (kept for backward compat).
+ *
+ * Props
+ *  - onJobAdded(job): function called with the created job response.
+ *  - apiKey: optional string; appended as ?key=... to support admin/demo mode.
+ *
+ * Note: some helpers here are duplicated in JobList. Consider extracting to
+ * /frontend/src/utils/date.ts(x) in a follow-up so the app uses one source.
+ */
 import React, { useState } from 'react';
 import axios from 'axios';
 
-// Helpers: produce a strict YYYY-MM-DD and a "today" value
+/**
+ * Normalize a date string into strict YYYY-MM-DD.
+ * Accepts "YYYY-M-D" and pads month/day. Returns "" for invalid input.
+ */
 const normalizeYMD = (s) => {
   if (!s || typeof s !== 'string') return '';
   // Accept "YYYY-MM-DD" and also pad variants like "YYYY-M-D"
@@ -12,7 +30,17 @@ const normalizeYMD = (s) => {
   return `${y}-${String(mo).padStart(2, '0')}-${String(d).padStart(2, '0')}`;
 };
 
-const todayYMD = () => new Date().toISOString().slice(0, 10);
+/**
+ * Local (non-UTC) today in YYYY-MM-DD.
+ * Avoids evening rollover issues that occur with toISOString().
+ */
+const todayYMD = () => {
+  const d = new Date();
+  const y = d.getFullYear();
+  const m = String(d.getMonth() + 1).padStart(2, '0');
+  const day = String(d.getDate()).padStart(2, '0');
+  return `${y}-${m}-${day}`;
+};
 
 const JobForm = ({ onJobAdded, apiKey }) => {
   const [formData, setFormData] = useState({
@@ -25,10 +53,19 @@ const JobForm = ({ onJobAdded, apiKey }) => {
     status_history: []
   });
 
-  const tagOptions = ['Remote', 'Referral', 'Urgent', 'Startup'];
+  // Tag options shown in the form and mirrored in JobList for editing/filtering.
+  // Stored as a comma-separated string on the job for now.
+  const tagOptions = [
+    'Remote',
+    'Hybrid',
+    'On-Site',
+    'Referral',
+    'Urgent',
+    'Startup'
+  ];
   const [selectedTags, setSelectedTags] = useState([]);
 
-  // Reusable input styles (keeps consistency and uses theme accents on focus)
+  // Shared input styles (dark/light + focus accents)
   const inputBase =
     'p-2 border rounded bg-light-background dark:bg-dark-card text-light-text dark:text-dark-text focus:outline-none focus:ring-2 focus:ring-light-accent focus:border-light-accent dark:focus:ring-dark-accent dark:focus:border-dark-accent';
   const selectBase = inputBase;
@@ -47,6 +84,7 @@ const JobForm = ({ onJobAdded, apiKey }) => {
       .filter(Boolean)
       .join(',');
 
+    // Build normalized payload: strict date + comma-joined tags + initial status entry
     axios
       .post(`${import.meta.env.VITE_API_BASE_URL}/jobs/${query}`, {
         ...formData,
@@ -113,9 +151,7 @@ const JobForm = ({ onJobAdded, apiKey }) => {
           placeholder='mm/dd/yyyy'
           className={[
             inputBase,
-            // when empty, use hint grey like other placeholders
             !formData.date_applied ? 'text-gray-400 dark:text-gray-400' : '',
-            // calendar icon visibility & pointer (webkit)
             '[&::-webkit-calendar-picker-indicator]:opacity-60',
             'dark:[&::-webkit-calendar-picker-indicator]:opacity-90',
             'dark:[&::-webkit-calendar-picker-indicator]:invert',
