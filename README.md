@@ -28,6 +28,13 @@ A full-stack web app to track, organize, and analyze job applications — and th
   - Automatic normalization of job dates, tags, and status history entries to ensure consistent formatting in both frontend and backend.
   - Tag deduplication logic prevents repeated tags on the same job.
   - Unified input field styling across all form elements, including a styled date picker with calendar icon and consistent focus states matching the light/dark theme accents.
+  - Improved job status tracking:
+    - Distinguishes between companies interviewed and interview rounds
+    - Added UI controls (+/−) to adjust interview rounds with preview
+    - Prevents auto-increment of interview rounds when switching to Interview status
+  - Cleaner wording and consistency in job statuses and history entries (e.g., "Interview Round(s):" pluralized automatically, "Offered on"/"Rejected on" with explicit dates)
+  - Entries sorted newest to oldest at the day level, and newest first within each day
+  - Location tags expanded to include Remote, Hybrid, and On-Site with unified pill styling
 
 ## Features In Progress / Planned
 
@@ -35,6 +42,7 @@ A full-stack web app to track, organize, and analyze job applications — and th
 - Interview/offer timeline graphs
 - AI tools for summarizing job descriptions and generating cover letters
 - CSV import for bulk uploads
+- Additional analytics (e.g., per-company interview round counts, timeline visualizations)
 
 ## Live Demo
 
