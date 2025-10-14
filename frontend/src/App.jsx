@@ -61,6 +61,37 @@ function App() {
     setJobs((prev) => [...prev, newJob]);
   };
 
+  const handleDemoAdd = (job) => {
+    setJobs((prev) => {
+      const next = [...prev, job];
+      saveDemoJobs(next);
+      return next;
+    });
+  };
+
+  const handleDemoUpdate = (id, patch) => {
+    setJobs((prev) => {
+      const next = prev.map((job) =>
+        job.id === id
+          ? {
+              ...job,
+              ...patch,
+            }
+          : job
+      );
+      saveDemoJobs(next);
+      return next;
+    });
+  };
+
+  const handleDemoDelete = (id) => {
+    setJobs((prev) => {
+      const next = prev.filter((job) => job.id !== id);
+      saveDemoJobs(next);
+      return next;
+    });
+  };
+
   useEffect(() => {
     if (hasAdminKey) {
       setLoading(true);
@@ -120,14 +151,17 @@ function App() {
       <JobForm
         onJobAdded={handleJobAdded}
         apiKey={apiKey}
-        disabled={isDemo}
+        demoMode={isDemo}
+        onDemoAdd={handleDemoAdd}
       />
       <ApplicationTrends jobs={jobs} />
       <JobList
         jobs={jobs}
         setJobs={setJobs}
         apiKey={apiKey}
-        readonly={isDemo}
+        demoMode={isDemo}
+        onDemoUpdate={handleDemoUpdate}
+        onDemoDelete={handleDemoDelete}
       />
 
     </div>

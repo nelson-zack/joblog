@@ -9,7 +9,8 @@
  * Props
  *  - onJobAdded(job): function called with the created job response.
  *  - apiKey: optional string; appended as ?key=... to support admin/demo mode.
- *  - disabled: when true, renders a read-only demo version of the form.
+ *  - demoMode: when true, emits jobs locally without calling the API.
+ *  - onDemoAdd(job): optional callback used to add jobs in demo mode.
  *
  * Note: some helpers here are duplicated in JobList. Consider extracting to
  * /frontend/src/utils/date.ts(x) in a follow-up so the app uses one source.
@@ -43,7 +44,7 @@ const todayYMD = () => {
   return `${y}-${m}-${day}`;
 };
 
-const JobForm = ({ onJobAdded, apiKey, disabled = false }) => {
+const JobForm = ({ onJobAdded, apiKey, demoMode = false, onDemoAdd }) => {
   const [formData, setFormData] = useState({
     title: '',
     company: '',
@@ -73,33 +74,53 @@ const JobForm = ({ onJobAdded, apiKey, disabled = false }) => {
   const textAreaBase = inputBase;
 
   const handleChange = (e) => {
-    if (disabled) return;
     setFormData({ ...formData, [e.target.name]: e.target.value });
   };
 
   const handleSubmit = (e) => {
     e.preventDefault();
-    if (disabled) return;
-    const query = apiKey ? `?key=${apiKey}` : '';
-    const dateNorm = normalizeYMD(formData.date_applied || todayYMD());
+    const resolvedDate = normalizeYMD(formData.date_applied || todayYMD());
     const tagsNorm = selectedTags
       .map((t) => t.trim())
       .filter(Boolean)
       .join(',');
 
+    const payload = {
+      ...formData,
+      tags: tagsNorm,
+      date_applied: resolvedDate,
+      status_history: [
+        {
+          status: formData.status,
+          date: resolvedDate
+        }
+      ]
+    };
+
+    if (demoMode && typeof onDemoAdd === 'function') {
+      const demoJob = {
+        ...payload,
+        id: Date.now() + Math.floor(Math.random() * 1000)
+      };
+      onDemoAdd(demoJob);
+      setFormData({
+        title: '',
+        company: '',
+        link: '',
+        status: 'Applied',
+        date_applied: '',
+        notes: '',
+        status_history: []
+      });
+      setSelectedTags([]);
+      return;
+    }
+
+    const query = apiKey ? `?key=${apiKey}` : '';
+
     // Build normalized payload: strict date + comma-joined tags + initial status entry
     axios
-      .post(`${import.meta.env.VITE_API_BASE_URL}/jobs/${query}`, {
-        ...formData,
-        tags: tagsNorm,
-        date_applied: dateNorm,
-        status_history: [
-          {
-            status: formData.status,
-            date: dateNorm
-          }
-        ]
-      })
+      .post(`${import.meta.env.VITE_API_BASE_URL}/jobs/${query}`, payload)
       .then((res) => {
         onJobAdded(res.data);
         setFormData({
@@ -130,7 +151,6 @@ const JobForm = ({ onJobAdded, apiKey, disabled = false }) => {
           placeholder='Job Title'
           required
           className={inputBase}
-          disabled={disabled}
         />
         <input
           name='company'
@@ -139,7 +159,6 @@ const JobForm = ({ onJobAdded, apiKey, disabled = false }) => {
           placeholder='Company'
           required
           className={inputBase}
-          disabled={disabled}
         />
         <input
           name='link'
@@ -147,7 +166,6 @@ const JobForm = ({ onJobAdded, apiKey, disabled = false }) => {
           onChange={handleChange}
           placeholder='Job Link'
           className={inputBase}
-          disabled={disabled}
         />
         <input
           type='date'
@@ -163,14 +181,12 @@ const JobForm = ({ onJobAdded, apiKey, disabled = false }) => {
             'dark:[&::-webkit-calendar-picker-indicator]:invert',
             '[&::-webkit-calendar-picker-indicator]:cursor-pointer'
           ].join(' ')}
-          disabled={disabled}
         />
         <select
           name='status'
           value={formData.status}
           onChange={handleChange}
           className={selectBase}
-          disabled={disabled}
         >
           <option value='Applied'>Applied</option>
           <option value='Interviewing'>Interviewing</option>
@@ -184,7 +200,6 @@ const JobForm = ({ onJobAdded, apiKey, disabled = false }) => {
           placeholder='Notes'
           rows={3}
           className={textAreaBase}
-          disabled={disabled}
         />
         <div>
           <label className='font-semibold'>Tags:</label>
@@ -196,9 +211,7 @@ const JobForm = ({ onJobAdded, apiKey, disabled = false }) => {
                   className='h-4 w-4 accent-light-accent dark:accent-dark-accent bg-light-background dark:bg-dark-card border border-gray-300 dark:border-gray-600 focus:ring-light-accent dark:focus:ring-dark-accent focus:ring-offset-1'
                   value={tag}
                   checked={selectedTags.includes(tag)}
-                  disabled={disabled}
                   onChange={(e) => {
-                    if (disabled) return;
                     if (e.target.checked) {
                       setSelectedTags([...selectedTags, tag]);
                     } else {
@@ -213,16 +226,10 @@ const JobForm = ({ onJobAdded, apiKey, disabled = false }) => {
         </div>
         <button
           type='submit'
-          className='bg-light-accent text-white dark:bg-dark-accent px-4 py-2 rounded transition hover:bg-light-accentHover dark:hover:bg-dark-accentHover dark:hover:shadow-[0_0_10px_var(--tw-shadow-color)] shadow-dark-accentHover disabled:opacity-60 disabled:cursor-not-allowed disabled:hover:bg-light-accent'
-          disabled={disabled}
+          className='bg-light-accent text-white dark:bg-dark-accent px-4 py-2 rounded transition hover:bg-light-accentHover dark:hover:bg-dark-accentHover dark:hover:shadow-[0_0_10px_var(--tw-shadow-color)] shadow-dark-accentHover'
         >
-          {disabled ? 'Add Job (demo disabled)' : 'Add Job'}
+          Add Job
         </button>
-        {disabled && (
-          <p className='text-xs text-gray-500 mt-1 dark:text-gray-400'>
-            Demo mode: adding jobs is disabled.
-          </p>
-        )}
       </div>
     </form>
   );
