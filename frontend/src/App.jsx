@@ -6,6 +6,44 @@ import ApplicationTrends from "./components/ApplicationTrends";
 import DemoBanner from "./components/DemoBanner";
 import mockJobs from "./mock/jobs.sample.json";
 
+const DEMO_STORAGE_KEY = "joblog_demo_state_v1";
+
+const cloneSeedJobs = () => JSON.parse(JSON.stringify(mockJobs));
+
+const loadDemoJobs = () => {
+  if (typeof window === "undefined") {
+    return cloneSeedJobs();
+  }
+
+  try {
+    const raw = window.sessionStorage.getItem(DEMO_STORAGE_KEY);
+    if (!raw) return cloneSeedJobs();
+    const parsed = JSON.parse(raw);
+    return Array.isArray(parsed) ? parsed : cloneSeedJobs();
+  } catch (error) {
+    console.warn("Failed to load demo jobs from sessionStorage:", error);
+    return cloneSeedJobs();
+  }
+};
+
+const saveDemoJobs = (jobs) => {
+  if (typeof window === "undefined") return;
+  try {
+    window.sessionStorage.setItem(DEMO_STORAGE_KEY, JSON.stringify(jobs));
+  } catch (error) {
+    console.warn("Failed to save demo jobs to sessionStorage:", error);
+  }
+};
+
+const resetDemoJobs = () => {
+  if (typeof window === "undefined") return;
+  try {
+    window.sessionStorage.removeItem(DEMO_STORAGE_KEY);
+  } catch (error) {
+    console.warn("Failed to reset demo jobs in sessionStorage:", error);
+  }
+};
+
 function App() {
   const [jobs, setJobs] = useState([]);
   const [loading, setLoading] = useState(true);
@@ -38,7 +76,8 @@ function App() {
       return;
     }
 
-    setJobs(mockJobs);
+    const demoJobs = loadDemoJobs();
+    setJobs(demoJobs);
     setLoading(false);
   }, [hasAdminKey, apiKey]);
 
