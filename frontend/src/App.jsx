@@ -95,24 +95,35 @@ const ensureRecentActivity = (jobs, daysWindow = 7) => {
     return dateB - dateA;
   });
 
-  sortedByRecency.slice(0, Math.min(daysWindow, sortedByRecency.length)).forEach((job, index) => {
-    const targetDate = new Date(todayUTC);
-    targetDate.setUTCDate(todayUTC.getUTCDate() - index);
+  const distribution = [3, 2, 2, 1, 1, 1, 1];
+  const maxEntries = distribution
+    .slice(0, daysWindow)
+    .reduce((sum, count) => sum + count, 0);
+  const targetCount = Math.min(sortedByRecency.length, maxEntries);
 
-    const currentDate = parseYMDToDate(job.date_applied);
-    if (!currentDate) return;
+  let assigned = 0;
+  for (let dayOffset = 0; dayOffset < daysWindow && assigned < targetCount; dayOffset++) {
+    const countForDay = distribution[dayOffset] ?? 1;
+    for (let i = 0; i < countForDay && assigned < targetCount; i++) {
+      const job = sortedByRecency[assigned++];
+      const currentDate = parseYMDToDate(job.date_applied);
+      if (!currentDate) continue;
 
-    const diffDays = Math.floor((targetDate - currentDate) / MS_PER_DAY);
-    if (diffDays === 0) return;
+      const targetDate = new Date(todayUTC);
+      targetDate.setUTCDate(todayUTC.getUTCDate() - dayOffset);
 
-    job.date_applied = shiftDateString(job.date_applied, diffDays);
-    if (Array.isArray(job.status_history)) {
-      job.status_history = job.status_history.map((entry) => ({
-        ...entry,
-        date: shiftDateString(entry.date, diffDays),
-      }));
+      const diffDays = Math.floor((targetDate - currentDate) / MS_PER_DAY);
+      if (diffDays === 0) continue;
+
+      job.date_applied = shiftDateString(job.date_applied, diffDays);
+      if (Array.isArray(job.status_history)) {
+        job.status_history = job.status_history.map((entry) => ({
+          ...entry,
+          date: shiftDateString(entry.date, diffDays),
+        }));
+      }
     }
-  });
+  }
 
   return jobs;
 };
