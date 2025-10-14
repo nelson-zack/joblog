@@ -7,6 +7,13 @@
  *  - Dates: strict YYYY-MM-DD; use local (non-UTC) "today" defaults.
  *  - History: interview rounds are explicit entries; Offer/Rejected capture dated entries.
  *  - Tags: stored CSV; checkboxes drive pill UI and filters.
+ *
+ * Props
+ *  - jobs, setJobs: data and setter from the parent.
+ *  - apiKey: optional key passed through for API access.
+ *  - demoMode: when true, updates happen locally without API calls.
+ *  - onDemoUpdate(id, updatedJob): optional handler for in-memory edits.
+ *  - onDemoDelete(id): optional handler for in-memory deletions.
  */
 import React, { useState } from 'react';
 import axios from 'axios';
@@ -50,7 +57,14 @@ const localTodayYMD = () => {
 
 const BASE_URL = import.meta.env.VITE_API_BASE_URL;
 
-const JobList = ({ jobs, setJobs }) => {
+const JobList = ({
+  jobs,
+  setJobs,
+  apiKey,
+  demoMode = false,
+  onDemoUpdate,
+  onDemoDelete
+}) => {
   const [editJobId, setEditJobId] = useState(null);
   const [editFormData, setEditFormData] = useState({
     title: '',
@@ -81,10 +95,15 @@ const JobList = ({ jobs, setJobs }) => {
   const [offerDate, setOfferDate] = useState(localTodayYMD());
   const [rejectDate, setRejectDate] = useState(localTodayYMD());
 
-  const apiKey = new URLSearchParams(window.location.search).get('key');
+  const adminKey =
+    apiKey ?? new URLSearchParams(window.location.search).get('key');
 
   const handleDelete = (id) => {
-    const query = apiKey ? `?key=${apiKey}` : '';
+    if (demoMode && typeof onDemoDelete === 'function') {
+      onDemoDelete(id);
+      return;
+    }
+    const query = adminKey ? `?key=${adminKey}` : '';
     axios
       .delete(`${BASE_URL}/jobs/${id}${query}`)
       .then(() => {
@@ -117,7 +136,7 @@ const JobList = ({ jobs, setJobs }) => {
   };
 
   const handleSave = () => {
-    const query = apiKey ? `?key=${apiKey}` : '';
+    const query = adminKey ? `?key=${adminKey}` : '';
     const original = jobs.find((job) => job.id === editJobId);
     // Start from the latest server-backed history to avoid stale copies
     const updatedHistory = Array.isArray(original?.status_history)
@@ -209,10 +228,55 @@ const JobList = ({ jobs, setJobs }) => {
       status_history: updatedHistory,
       tags: (editFormData.tags || '')
         .split(',')
-        .map((t) => t.trim())
-        .filter(Boolean)
-        .join(',')
+      .map((t) => t.trim())
+      .filter(Boolean)
+      .join(',')
     };
+
+    if (demoMode && typeof onDemoUpdate === 'function') {
+      let updated = {
+        ...original,
+        ...payload
+      };
+
+      if (editFormData.status === 'Offer') {
+        const hasOffer =
+          Array.isArray(updated.status_history) &&
+          updated.status_history.some((s) => s.status === 'Offer');
+        if (!hasOffer) {
+          const d = normalizeYMD(offerDate) || localTodayYMD();
+          updated = {
+            ...updated,
+            status_history: [
+              ...(updated.status_history || []),
+              { status: 'Offer', date: d }
+            ]
+          };
+        }
+      } else if (editFormData.status === 'Rejected') {
+        const hasRejected =
+          Array.isArray(updated.status_history) &&
+          updated.status_history.some((s) => s.status === 'Rejected');
+        if (!hasRejected) {
+          const d = normalizeYMD(rejectDate) || localTodayYMD();
+          updated = {
+            ...updated,
+            status_history: [
+              ...(updated.status_history || []),
+              { status: 'Rejected', date: d }
+            ]
+          };
+        }
+      }
+
+      onDemoUpdate(editJobId, updated);
+      setEditJobId(null);
+      setRoundDelta(0);
+      setRoundAddDate(localTodayYMD());
+      setOfferDate(localTodayYMD());
+      setRejectDate(localTodayYMD());
+      return;
+    }
 
     axios
       .put(`${BASE_URL}/jobs/${editJobId}${query}`, payload)

@@ -9,6 +9,8 @@
  * Props
  *  - onJobAdded(job): function called with the created job response.
  *  - apiKey: optional string; appended as ?key=... to support admin/demo mode.
+ *  - demoMode: when true, emits jobs locally without calling the API.
+ *  - onDemoAdd(job): optional callback used to add jobs in demo mode.
  *
  * Note: some helpers here are duplicated in JobList. Consider extracting to
  * /frontend/src/utils/date.ts(x) in a follow-up so the app uses one source.
@@ -42,7 +44,7 @@ const todayYMD = () => {
   return `${y}-${m}-${day}`;
 };
 
-const JobForm = ({ onJobAdded, apiKey }) => {
+const JobForm = ({ onJobAdded, apiKey, demoMode = false, onDemoAdd }) => {
   const [formData, setFormData] = useState({
     title: '',
     company: '',
@@ -77,26 +79,48 @@ const JobForm = ({ onJobAdded, apiKey }) => {
 
   const handleSubmit = (e) => {
     e.preventDefault();
-    const query = apiKey ? `?key=${apiKey}` : '';
-    const dateNorm = normalizeYMD(formData.date_applied || todayYMD());
+    const resolvedDate = normalizeYMD(formData.date_applied || todayYMD());
     const tagsNorm = selectedTags
       .map((t) => t.trim())
       .filter(Boolean)
       .join(',');
 
+    const payload = {
+      ...formData,
+      tags: tagsNorm,
+      date_applied: resolvedDate,
+      status_history: [
+        {
+          status: formData.status,
+          date: resolvedDate
+        }
+      ]
+    };
+
+    if (demoMode && typeof onDemoAdd === 'function') {
+      const demoJob = {
+        ...payload,
+        id: Date.now() + Math.floor(Math.random() * 1000)
+      };
+      onDemoAdd(demoJob);
+      setFormData({
+        title: '',
+        company: '',
+        link: '',
+        status: 'Applied',
+        date_applied: '',
+        notes: '',
+        status_history: []
+      });
+      setSelectedTags([]);
+      return;
+    }
+
+    const query = apiKey ? `?key=${apiKey}` : '';
+
     // Build normalized payload: strict date + comma-joined tags + initial status entry
     axios
-      .post(`${import.meta.env.VITE_API_BASE_URL}/jobs/${query}`, {
-        ...formData,
-        tags: tagsNorm,
-        date_applied: dateNorm,
-        status_history: [
-          {
-            status: formData.status,
-            date: dateNorm
-          }
-        ]
-      })
+      .post(`${import.meta.env.VITE_API_BASE_URL}/jobs/${query}`, payload)
       .then((res) => {
         onJobAdded(res.data);
         setFormData({

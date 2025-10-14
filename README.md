@@ -49,6 +49,13 @@ A full-stack web app to track, organize, and analyze job applications — and th
 - **Frontend**: https://joblog.zacknelson.dev
 - **Backend API**: https://joblog-api.onrender.com
 
+## Demo Mode
+
+- Visiting the site without a `?key=...` query string runs Job Log fully in the browser with the bundled dataset from `frontend/src/mock/jobs.sample.json` (strict `YYYY-MM-DD` dates, realistic histories).
+- You can add, edit, and delete jobs in demo mode; changes persist for the current tab via `sessionStorage` and never leave the browser.
+- Click **Reset Demo** to restore the original seeded dataset at any time.
+- Supplying a valid key (e.g. `?key=your-admin-key`) reconnects to the live API so authenticated users can manage their private data—now over 250 real applications tracked securely.
+
 ## Tech Stack
 
 - **Frontend:** React + Tailwind CSS (Vite)

@@ -3,6 +3,167 @@ import axios from "axios";
 import JobForm from "./components/JobForm";
 import JobList from "./components/JobList";
 import ApplicationTrends from "./components/ApplicationTrends";
+import DemoBanner from "./components/DemoBanner";
+import mockJobs from "./mock/jobs.sample.json";
+
+const DEMO_STORAGE_KEY = "joblog_demo_state_v1";
+const MS_PER_DAY = 24 * 60 * 60 * 1000;
+
+const cloneSeedJobs = () => JSON.parse(JSON.stringify(mockJobs));
+
+const parseYMDToDate = (value) => {
+  if (typeof value !== "string") return null;
+  const match = value.match(/^(\d{4})-(\d{2})-(\d{2})$/);
+  if (!match) return null;
+  const [, year, month, day] = match;
+  const date = new Date(Date.UTC(Number(year), Number(month) - 1, Number(day)));
+  return Number.isNaN(date.getTime()) ? null : date;
+};
+
+const formatDateToYMD = (date) => {
+  const year = date.getUTCFullYear();
+  const month = String(date.getUTCMonth() + 1).padStart(2, "0");
+  const day = String(date.getUTCDate()).padStart(2, "0");
+  return `${year}-${month}-${day}`;
+};
+
+const shiftDateString = (value, offsetDays) => {
+  const parsed = parseYMDToDate(value);
+  if (!parsed) return value;
+  parsed.setUTCDate(parsed.getUTCDate() + offsetDays);
+  return formatDateToYMD(parsed);
+};
+
+const findLatestJobDate = (jobs) => {
+  let latest = null;
+
+  jobs.forEach((job) => {
+    const jobDate = parseYMDToDate(job.date_applied);
+    if (jobDate && (!latest || jobDate > latest)) {
+      latest = jobDate;
+    }
+
+    if (Array.isArray(job.status_history)) {
+      job.status_history.forEach((entry) => {
+        const entryDate = parseYMDToDate(entry.date);
+        if (entryDate && (!latest || entryDate > latest)) {
+          latest = entryDate;
+        }
+      });
+    }
+  });
+
+  return latest;
+};
+
+const alignJobsNearToday = (jobs) => {
+  const latestDate = findLatestJobDate(jobs);
+  if (!latestDate) return jobs;
+
+  const now = new Date();
+  const todayUTC = new Date(
+    Date.UTC(now.getFullYear(), now.getMonth(), now.getDate())
+  );
+  const diffDays = Math.floor((todayUTC - latestDate) / MS_PER_DAY);
+  if (diffDays <= 0) return jobs;
+
+  return jobs.map((job) => {
+    const shiftedHistory = Array.isArray(job.status_history)
+      ? job.status_history.map((entry) => ({
+          ...entry,
+          date: shiftDateString(entry.date, diffDays),
+        }))
+      : job.status_history;
+
+    return {
+      ...job,
+      date_applied: shiftDateString(job.date_applied, diffDays),
+      status_history: shiftedHistory,
+    };
+  });
+};
+
+const ensureRecentActivity = (jobs, daysWindow = 7) => {
+  const today = new Date();
+  const todayUTC = new Date(
+    Date.UTC(today.getFullYear(), today.getMonth(), today.getDate())
+  );
+
+  const sortedByRecency = [...jobs].sort((a, b) => {
+    const dateA = parseYMDToDate(a.date_applied) ?? 0;
+    const dateB = parseYMDToDate(b.date_applied) ?? 0;
+    return dateB - dateA;
+  });
+
+  const distribution = [3, 2, 2, 1, 1, 1, 1];
+  const maxEntries = distribution
+    .slice(0, daysWindow)
+    .reduce((sum, count) => sum + count, 0);
+  const targetCount = Math.min(sortedByRecency.length, maxEntries);
+
+  let assigned = 0;
+  for (let dayOffset = 0; dayOffset < daysWindow && assigned < targetCount; dayOffset++) {
+    const countForDay = distribution[dayOffset] ?? 1;
+    for (let i = 0; i < countForDay && assigned < targetCount; i++) {
+      const job = sortedByRecency[assigned++];
+      const currentDate = parseYMDToDate(job.date_applied);
+      if (!currentDate) continue;
+
+      const targetDate = new Date(todayUTC);
+      targetDate.setUTCDate(todayUTC.getUTCDate() - dayOffset);
+
+      const diffDays = Math.floor((targetDate - currentDate) / MS_PER_DAY);
+      if (diffDays === 0) continue;
+
+      job.date_applied = shiftDateString(job.date_applied, diffDays);
+      if (Array.isArray(job.status_history)) {
+        job.status_history = job.status_history.map((entry) => ({
+          ...entry,
+          date: shiftDateString(entry.date, diffDays),
+        }));
+      }
+    }
+  }
+
+  return jobs;
+};
+
+const createAlignedDemoSeed = () =>
+  ensureRecentActivity(alignJobsNearToday(cloneSeedJobs()));
+
+const loadDemoJobs = () => {
+  if (typeof window === "undefined") {
+    return createAlignedDemoSeed();
+  }
+
+  try {
+    const raw = window.sessionStorage.getItem(DEMO_STORAGE_KEY);
+    if (!raw) return createAlignedDemoSeed();
+    const parsed = JSON.parse(raw);
+    return Array.isArray(parsed) ? parsed : createAlignedDemoSeed();
+  } catch (error) {
+    console.warn("Failed to load demo jobs from sessionStorage:", error);
+    return createAlignedDemoSeed();
+  }
+};
+
+const saveDemoJobs = (jobs) => {
+  if (typeof window === "undefined") return;
+  try {
+    window.sessionStorage.setItem(DEMO_STORAGE_KEY, JSON.stringify(jobs));
+  } catch (error) {
+    console.warn("Failed to save demo jobs to sessionStorage:", error);
+  }
+};
+
+const resetDemoJobs = () => {
+  if (typeof window === "undefined") return;
+  try {
+    window.sessionStorage.removeItem(DEMO_STORAGE_KEY);
+  } catch (error) {
+    console.warn("Failed to reset demo jobs in sessionStorage:", error);
+  }
+};
 
 function App() {
   const [jobs, setJobs] = useState([]);
@@ -12,19 +173,72 @@ function App() {
   }); // New state for dark mode
 
   // Extract API key from URL query string
-  const apiKey = new URLSearchParams(window.location.search).get("key");
+  const params = new URLSearchParams(window.location.search);
+  const apiKey = params.get("key");
+  const hasAdminKey = Boolean(apiKey);
+  const isDemo = !hasAdminKey;
 
   const handleJobAdded = (newJob) => {
     setJobs((prev) => [...prev, newJob]);
   };
 
+  const handleDemoAdd = (job) => {
+    setJobs((prev) => {
+      const next = [...prev, job];
+      saveDemoJobs(next);
+      return next;
+    });
+  };
+
+  const handleDemoUpdate = (id, patch) => {
+    setJobs((prev) => {
+      const next = prev.map((job) =>
+        job.id === id
+          ? {
+              ...job,
+              ...patch,
+            }
+          : job
+      );
+      saveDemoJobs(next);
+      return next;
+    });
+  };
+
+  const handleDemoDelete = (id) => {
+    setJobs((prev) => {
+      const next = prev.filter((job) => job.id !== id);
+      saveDemoJobs(next);
+      return next;
+    });
+  };
+
+  const handleResetDemo = () => {
+    const seedJobs = createAlignedDemoSeed();
+    resetDemoJobs();
+    saveDemoJobs(seedJobs);
+    setJobs(seedJobs);
+  };
+
   useEffect(() => {
-    axios
-      .get(`${import.meta.env.VITE_API_BASE_URL}/jobs/`)
-      .then((response) => setJobs(response.data))
-      .catch((error) => console.error("Error fetching jobs:", error))
-      .finally(() => setLoading(false));
-  }, []);
+    if (hasAdminKey) {
+      setLoading(true);
+      axios
+        .get(
+          `${import.meta.env.VITE_API_BASE_URL}/jobs?key=${encodeURIComponent(
+            apiKey
+          )}`
+        )
+        .then((response) => setJobs(response.data))
+        .catch((error) => console.error("Error fetching jobs:", error))
+        .finally(() => setLoading(false));
+      return;
+    }
+
+    const demoJobs = loadDemoJobs();
+    setJobs(demoJobs);
+    setLoading(false);
+  }, [hasAdminKey, apiKey]);
 
   useEffect(() => {
     if (darkMode) {
@@ -60,17 +274,24 @@ function App() {
         </div>
       </div>
 
-      <JobForm onJobAdded={handleJobAdded} apiKey={apiKey} />
-      <ApplicationTrends jobs={jobs} />
-      <JobList jobs={jobs} setJobs={setJobs} apiKey={apiKey} />
+      {isDemo && <DemoBanner onReset={handleResetDemo} />}
 
-      {!apiKey && (
-        <div className="mt-6 text-center text-sm text-gray-500 dark:text-gray-400">
-          <span className="inline-block bg-light-tag-remoteBg text-light-accent dark:bg-dark-card dark:text-dark-tag-text px-3 py-1 rounded border border-light-accent">
-            Demo mode: editing requires admin access
-          </span>
-        </div>
-      )}
+      <JobForm
+        onJobAdded={handleJobAdded}
+        apiKey={apiKey}
+        demoMode={isDemo}
+        onDemoAdd={handleDemoAdd}
+      />
+      <ApplicationTrends jobs={jobs} />
+      <JobList
+        jobs={jobs}
+        setJobs={setJobs}
+        apiKey={apiKey}
+        demoMode={isDemo}
+        onDemoUpdate={handleDemoUpdate}
+        onDemoDelete={handleDemoDelete}
+      />
+
     </div>
   );
 }
