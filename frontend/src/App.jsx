@@ -83,7 +83,42 @@ const alignJobsNearToday = (jobs) => {
   });
 };
 
-const createAlignedDemoSeed = () => alignJobsNearToday(cloneSeedJobs());
+const ensureRecentActivity = (jobs, daysWindow = 7) => {
+  const today = new Date();
+  const todayUTC = new Date(
+    Date.UTC(today.getFullYear(), today.getMonth(), today.getDate())
+  );
+
+  const sortedByRecency = [...jobs].sort((a, b) => {
+    const dateA = parseYMDToDate(a.date_applied) ?? 0;
+    const dateB = parseYMDToDate(b.date_applied) ?? 0;
+    return dateB - dateA;
+  });
+
+  sortedByRecency.slice(0, Math.min(daysWindow, sortedByRecency.length)).forEach((job, index) => {
+    const targetDate = new Date(todayUTC);
+    targetDate.setUTCDate(todayUTC.getUTCDate() - index);
+
+    const currentDate = parseYMDToDate(job.date_applied);
+    if (!currentDate) return;
+
+    const diffDays = Math.floor((targetDate - currentDate) / MS_PER_DAY);
+    if (diffDays === 0) return;
+
+    job.date_applied = shiftDateString(job.date_applied, diffDays);
+    if (Array.isArray(job.status_history)) {
+      job.status_history = job.status_history.map((entry) => ({
+        ...entry,
+        date: shiftDateString(entry.date, diffDays),
+      }));
+    }
+  });
+
+  return jobs;
+};
+
+const createAlignedDemoSeed = () =>
+  ensureRecentActivity(alignJobsNearToday(cloneSeedJobs()));
 
 const loadDemoJobs = () => {
   if (typeof window === "undefined") {
