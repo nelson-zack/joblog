@@ -92,6 +92,13 @@ function App() {
     });
   };
 
+  const handleResetDemo = () => {
+    const seedJobs = cloneSeedJobs();
+    resetDemoJobs();
+    saveDemoJobs(seedJobs);
+    setJobs(seedJobs);
+  };
+
   useEffect(() => {
     if (hasAdminKey) {
       setLoading(true);
@@ -146,7 +153,7 @@ function App() {
         </div>
       </div>
 
-      {isDemo && <DemoBanner />}
+      {isDemo && <DemoBanner onReset={handleResetDemo} />}
 
       <JobForm
         onJobAdded={handleJobAdded}
