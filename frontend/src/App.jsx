@@ -3,6 +3,7 @@ import axios from "axios";
 import JobForm from "./components/JobForm";
 import JobList from "./components/JobList";
 import ApplicationTrends from "./components/ApplicationTrends";
+import DemoBanner from "./components/DemoBanner";
 import mockJobs from "./mock/jobs.sample.json";
 
 function App() {
@@ -75,6 +76,8 @@ function App() {
         </div>
       </div>
 
+      {isDemo && <DemoBanner />}
+
       <JobForm
         onJobAdded={handleJobAdded}
         apiKey={apiKey}
@@ -88,13 +91,6 @@ function App() {
         readonly={isDemo}
       />
 
-      {!apiKey && (
-        <div className="mt-6 text-center text-sm text-gray-500 dark:text-gray-400">
-          <span className="inline-block bg-light-tag-remoteBg text-light-accent dark:bg-dark-card dark:text-dark-tag-text px-3 py-1 rounded border border-light-accent">
-            Demo mode: editing requires admin access
-          </span>
-        </div>
-      )}
     </div>
   );
 }
