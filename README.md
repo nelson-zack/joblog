@@ -51,10 +51,10 @@ A full-stack web app to track, organize, and analyze job applications — and th
 
 ## Demo Mode
 
-- Visiting the site without a `?key=...` query string loads the bundled dataset in `frontend/src/mock/jobs.sample.json`, which uses strict `YYYY-MM-DD` dates and mirrors real status histories for a convincing walk-through.
-- In demo mode the app stays completely client-side: no backend calls, and actions like add/edit/delete are disabled to keep the sample data untouched.
-- Supplying a valid key (e.g. `?key=your-admin-key`) restores the live API connection so authenticated users can create, update, and remove entries.
-- The private deployment continues to track 250+ real applications securely—only anonymized demo data is ever shown publicly.
+- Visiting the site without a `?key=...` query string runs Job Log fully in the browser with the bundled dataset from `frontend/src/mock/jobs.sample.json` (strict `YYYY-MM-DD` dates, realistic histories).
+- You can add, edit, and delete jobs in demo mode; changes persist for the current tab via `sessionStorage` and never leave the browser.
+- Click **Reset Demo** to restore the original seeded dataset at any time.
+- Supplying a valid key (e.g. `?key=your-admin-key`) reconnects to the live API so authenticated users can manage their private data—now over 250 real applications tracked securely.
 
 ## Tech Stack
 
