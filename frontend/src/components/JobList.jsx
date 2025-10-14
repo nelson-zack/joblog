@@ -7,6 +7,11 @@
  *  - Dates: strict YYYY-MM-DD; use local (non-UTC) "today" defaults.
  *  - History: interview rounds are explicit entries; Offer/Rejected capture dated entries.
  *  - Tags: stored CSV; checkboxes drive pill UI and filters.
+ *
+ * Props
+ *  - jobs, setJobs: data and setter from the parent.
+ *  - apiKey: optional key passed through for API access.
+ *  - readonly: when true, hides editing/destructive actions for demo mode.
  */
 import React, { useState } from 'react';
 import axios from 'axios';
@@ -50,7 +55,7 @@ const localTodayYMD = () => {
 
 const BASE_URL = import.meta.env.VITE_API_BASE_URL;
 
-const JobList = ({ jobs, setJobs }) => {
+const JobList = ({ jobs, setJobs, apiKey, readonly = false }) => {
   const [editJobId, setEditJobId] = useState(null);
   const [editFormData, setEditFormData] = useState({
     title: '',
@@ -81,10 +86,12 @@ const JobList = ({ jobs, setJobs }) => {
   const [offerDate, setOfferDate] = useState(localTodayYMD());
   const [rejectDate, setRejectDate] = useState(localTodayYMD());
 
-  const apiKey = new URLSearchParams(window.location.search).get('key');
+  const adminKey =
+    apiKey ?? new URLSearchParams(window.location.search).get('key');
 
   const handleDelete = (id) => {
-    const query = apiKey ? `?key=${apiKey}` : '';
+    if (readonly) return;
+    const query = adminKey ? `?key=${adminKey}` : '';
     axios
       .delete(`${BASE_URL}/jobs/${id}${query}`)
       .then(() => {
@@ -94,6 +101,7 @@ const JobList = ({ jobs, setJobs }) => {
   };
 
   const handleEditClick = (job) => {
+    if (readonly) return;
     setEditJobId(job.id);
     setEditFormData({ ...job });
     setRoundDelta(0);
@@ -103,10 +111,12 @@ const JobList = ({ jobs, setJobs }) => {
   };
 
   const handleEditChange = (e) => {
+    if (readonly) return;
     setEditFormData({ ...editFormData, [e.target.name]: e.target.value });
   };
 
   const handleTagToggle = (tag) => {
+    if (readonly) return;
     const tags = editFormData.tags
       ? editFormData.tags.split(',').map((t) => t.trim())
       : [];
@@ -117,7 +127,8 @@ const JobList = ({ jobs, setJobs }) => {
   };
 
   const handleSave = () => {
-    const query = apiKey ? `?key=${apiKey}` : '';
+    if (readonly) return;
+    const query = adminKey ? `?key=${adminKey}` : '';
     const original = jobs.find((job) => job.id === editJobId);
     // Start from the latest server-backed history to avoid stale copies
     const updatedHistory = Array.isArray(original?.status_history)
@@ -751,24 +762,26 @@ const JobList = ({ jobs, setJobs }) => {
                         </div>
                       )}
                     </div>
-                    <div className='space-y-2 text-right'>
-                      <button
-                        onClick={() => handleEditClick(job)}
-                        className='text-white px-2 py-1 rounded mr-2 
+                    {!readonly && (
+                      <div className='space-y-2 text-right'>
+                        <button
+                          onClick={() => handleEditClick(job)}
+                          className='text-white px-2 py-1 rounded mr-2 
                           bg-light-accent hover:bg-light-accentHover 
                           dark:bg-cyan-500 dark:hover:bg-cyan-400 dark:hover:shadow-[0_0_10px_#22d3ee]'
-                      >
-                        Edit
-                      </button>
-                      <button
-                        onClick={() => handleDelete(job.id)}
-                        className='px-2 py-1 rounded 
+                        >
+                          Edit
+                        </button>
+                        <button
+                          onClick={() => handleDelete(job.id)}
+                          className='px-2 py-1 rounded 
                           text-white bg-red-400 hover:bg-red-500 
                           dark:bg-red-600 dark:hover:bg-red-500 dark:hover:shadow-[0_0_10px_#f87171]'
-                      >
-                        Delete
-                      </button>
-                    </div>
+                        >
+                          Delete
+                        </button>
+                      </div>
+                    )}
                   </>
                 )}
               </div>

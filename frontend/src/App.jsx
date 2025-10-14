@@ -16,6 +16,7 @@ function App() {
   const params = new URLSearchParams(window.location.search);
   const apiKey = params.get("key");
   const hasAdminKey = Boolean(apiKey);
+  const isDemo = !hasAdminKey;
 
   const handleJobAdded = (newJob) => {
     setJobs((prev) => [...prev, newJob]);
@@ -74,9 +75,18 @@ function App() {
         </div>
       </div>
 
-      <JobForm onJobAdded={handleJobAdded} apiKey={apiKey} />
+      <JobForm
+        onJobAdded={handleJobAdded}
+        apiKey={apiKey}
+        disabled={isDemo}
+      />
       <ApplicationTrends jobs={jobs} />
-      <JobList jobs={jobs} setJobs={setJobs} apiKey={apiKey} />
+      <JobList
+        jobs={jobs}
+        setJobs={setJobs}
+        apiKey={apiKey}
+        readonly={isDemo}
+      />
 
       {!apiKey && (
         <div className="mt-6 text-center text-sm text-gray-500 dark:text-gray-400">
