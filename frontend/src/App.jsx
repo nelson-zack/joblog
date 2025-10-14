@@ -3,6 +3,7 @@ import axios from "axios";
 import JobForm from "./components/JobForm";
 import JobList from "./components/JobList";
 import ApplicationTrends from "./components/ApplicationTrends";
+import mockJobs from "./mock/jobs.sample.json";
 
 function App() {
   const [jobs, setJobs] = useState([]);
@@ -12,19 +13,32 @@ function App() {
   }); // New state for dark mode
 
   // Extract API key from URL query string
-  const apiKey = new URLSearchParams(window.location.search).get("key");
+  const params = new URLSearchParams(window.location.search);
+  const apiKey = params.get("key");
+  const hasAdminKey = Boolean(apiKey);
 
   const handleJobAdded = (newJob) => {
     setJobs((prev) => [...prev, newJob]);
   };
 
   useEffect(() => {
-    axios
-      .get(`${import.meta.env.VITE_API_BASE_URL}/jobs/`)
-      .then((response) => setJobs(response.data))
-      .catch((error) => console.error("Error fetching jobs:", error))
-      .finally(() => setLoading(false));
-  }, []);
+    if (hasAdminKey) {
+      setLoading(true);
+      axios
+        .get(
+          `${import.meta.env.VITE_API_BASE_URL}/jobs?key=${encodeURIComponent(
+            apiKey
+          )}`
+        )
+        .then((response) => setJobs(response.data))
+        .catch((error) => console.error("Error fetching jobs:", error))
+        .finally(() => setLoading(false));
+      return;
+    }
+
+    setJobs(mockJobs);
+    setLoading(false);
+  }, [hasAdminKey, apiKey]);
 
   useEffect(() => {
     if (darkMode) {
