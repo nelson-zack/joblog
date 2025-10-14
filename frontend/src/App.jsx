@@ -7,22 +7,97 @@ import DemoBanner from "./components/DemoBanner";
 import mockJobs from "./mock/jobs.sample.json";
 
 const DEMO_STORAGE_KEY = "joblog_demo_state_v1";
+const MS_PER_DAY = 24 * 60 * 60 * 1000;
 
 const cloneSeedJobs = () => JSON.parse(JSON.stringify(mockJobs));
 
+const parseYMDToDate = (value) => {
+  if (typeof value !== "string") return null;
+  const match = value.match(/^(\d{4})-(\d{2})-(\d{2})$/);
+  if (!match) return null;
+  const [, year, month, day] = match;
+  const date = new Date(Date.UTC(Number(year), Number(month) - 1, Number(day)));
+  return Number.isNaN(date.getTime()) ? null : date;
+};
+
+const formatDateToYMD = (date) => {
+  const year = date.getUTCFullYear();
+  const month = String(date.getUTCMonth() + 1).padStart(2, "0");
+  const day = String(date.getUTCDate()).padStart(2, "0");
+  return `${year}-${month}-${day}`;
+};
+
+const shiftDateString = (value, offsetDays) => {
+  const parsed = parseYMDToDate(value);
+  if (!parsed) return value;
+  parsed.setUTCDate(parsed.getUTCDate() + offsetDays);
+  return formatDateToYMD(parsed);
+};
+
+const findLatestJobDate = (jobs) => {
+  let latest = null;
+
+  jobs.forEach((job) => {
+    const jobDate = parseYMDToDate(job.date_applied);
+    if (jobDate && (!latest || jobDate > latest)) {
+      latest = jobDate;
+    }
+
+    if (Array.isArray(job.status_history)) {
+      job.status_history.forEach((entry) => {
+        const entryDate = parseYMDToDate(entry.date);
+        if (entryDate && (!latest || entryDate > latest)) {
+          latest = entryDate;
+        }
+      });
+    }
+  });
+
+  return latest;
+};
+
+const alignJobsNearToday = (jobs) => {
+  const latestDate = findLatestJobDate(jobs);
+  if (!latestDate) return jobs;
+
+  const now = new Date();
+  const todayUTC = new Date(
+    Date.UTC(now.getFullYear(), now.getMonth(), now.getDate())
+  );
+  const diffDays = Math.floor((todayUTC - latestDate) / MS_PER_DAY);
+  if (diffDays <= 0) return jobs;
+
+  return jobs.map((job) => {
+    const shiftedHistory = Array.isArray(job.status_history)
+      ? job.status_history.map((entry) => ({
+          ...entry,
+          date: shiftDateString(entry.date, diffDays),
+        }))
+      : job.status_history;
+
+    return {
+      ...job,
+      date_applied: shiftDateString(job.date_applied, diffDays),
+      status_history: shiftedHistory,
+    };
+  });
+};
+
+const createAlignedDemoSeed = () => alignJobsNearToday(cloneSeedJobs());
+
 const loadDemoJobs = () => {
   if (typeof window === "undefined") {
-    return cloneSeedJobs();
+    return createAlignedDemoSeed();
   }
 
   try {
     const raw = window.sessionStorage.getItem(DEMO_STORAGE_KEY);
-    if (!raw) return cloneSeedJobs();
+    if (!raw) return createAlignedDemoSeed();
     const parsed = JSON.parse(raw);
-    return Array.isArray(parsed) ? parsed : cloneSeedJobs();
+    return Array.isArray(parsed) ? parsed : createAlignedDemoSeed();
   } catch (error) {
     console.warn("Failed to load demo jobs from sessionStorage:", error);
-    return cloneSeedJobs();
+    return createAlignedDemoSeed();
   }
 };
 
@@ -93,7 +168,7 @@ function App() {
   };
 
   const handleResetDemo = () => {
-    const seedJobs = cloneSeedJobs();
+    const seedJobs = createAlignedDemoSeed();
     resetDemoJobs();
     saveDemoJobs(seedJobs);
     setJobs(seedJobs);
