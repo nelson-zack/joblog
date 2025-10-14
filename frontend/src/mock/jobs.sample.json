@@ -1,0 +1,241 @@
+[
+  {
+    "id": 982311,
+    "title": "Senior Frontend Engineer",
+    "company": "Nimbus Analytics",
+    "link": "https://nimbusanalytics.com/careers/frontend",
+    "notes": "Reached out through alumni network.",
+    "tags": "Remote,Referral",
+    "date_applied": "2024-01-05",
+    "status": "Interviewing",
+    "status_history": [
+      { "status": "Applied", "date": "2024-01-05" },
+      { "status": "Interviewing", "date": "2024-01-17" },
+      { "status": "Interviewing", "date": "2024-01-24" }
+    ]
+  },
+  {
+    "id": 982654,
+    "title": "Data Scientist",
+    "company": "QuantLeaf",
+    "link": "https://quantleaf.ai/jobs/data-scientist",
+    "notes": "Technical screen scheduled for early February.",
+    "tags": "Hybrid,Startup",
+    "date_applied": "2024-01-12",
+    "status": "Interviewing",
+    "status_history": [
+      { "status": "Applied", "date": "2024-01-12" },
+      { "status": "Interviewing", "date": "2024-01-26" }
+    ]
+  },
+  {
+    "id": 983120,
+    "title": "Platform Engineer",
+    "company": "Helios Cloud",
+    "link": "https://jobs.helioscloud.io/platform-engineer",
+    "notes": "Urgent replacement for on-call rotation.",
+    "tags": "Remote,Urgent",
+    "date_applied": "2024-01-19",
+    "status": "Applied",
+    "status_history": [
+      { "status": "Applied", "date": "2024-01-19" }
+    ]
+  },
+  {
+    "id": 983874,
+    "title": "Product Manager",
+    "company": "Evergreen CRM",
+    "link": "https://evergreencrm.com/careers/pm",
+    "notes": "Referred by mentor; case study due next week.",
+    "tags": "Hybrid,Referral",
+    "date_applied": "2024-01-22",
+    "status": "Interviewing",
+    "status_history": [
+      { "status": "Applied", "date": "2024-01-22" },
+      { "status": "Interviewing", "date": "2024-01-30" },
+      { "status": "Interviewing", "date": "2024-02-08" }
+    ]
+  },
+  {
+    "id": 984205,
+    "title": "Backend Engineer",
+    "company": "Blue Harbor Logistics",
+    "link": "https://blueharbor.io/jobs/backend",
+    "notes": "Follow up sent to recruiter after assessment.",
+    "tags": "Remote",
+    "date_applied": "2024-01-26",
+    "status": "Applied",
+    "status_history": [
+      { "status": "Applied", "date": "2024-01-26" }
+    ]
+  },
+  {
+    "id": 984612,
+    "title": "Staff iOS Engineer",
+    "company": "Aurora Health",
+    "link": "https://aurorahealth.app/careers/ios-staff-engineer",
+    "notes": "Mobile team growing; onsite interview in March.",
+    "tags": "Hybrid,On-Site",
+    "date_applied": "2024-02-02",
+    "status": "Interviewing",
+    "status_history": [
+      { "status": "Applied", "date": "2024-02-02" },
+      { "status": "Interviewing", "date": "2024-02-16" }
+    ]
+  },
+  {
+    "id": 985043,
+    "title": "Machine Learning Engineer",
+    "company": "SignalForge",
+    "link": "https://signalforge.com/careers/ml-engineer",
+    "notes": "Take-home challenge submitted.",
+    "tags": "Remote,Startup",
+    "date_applied": "2024-02-09",
+    "status": "Applied",
+    "status_history": [
+      { "status": "Applied", "date": "2024-02-09" }
+    ]
+  },
+  {
+    "id": 985477,
+    "title": "DevOps Engineer",
+    "company": "Coastal Retail",
+    "link": "https://careers.coastalretail.com/devops",
+    "notes": "Infrastructure modernization initiative.",
+    "tags": "On-Site,Urgent",
+    "date_applied": "2024-02-13",
+    "status": "Offer",
+    "status_history": [
+      { "status": "Applied", "date": "2024-02-13" },
+      { "status": "Interviewing", "date": "2024-02-21" },
+      { "status": "Offer", "date": "2024-03-05" }
+    ]
+  },
+  {
+    "id": 986019,
+    "title": "Full Stack Engineer",
+    "company": "Harborlight Labs",
+    "link": "https://harborlightlabs.com/jobs/full-stack",
+    "notes": "Met founders at local meetup; strong culture fit.",
+    "tags": "Startup,On-Site",
+    "date_applied": "2024-02-20",
+    "status": "Interviewing",
+    "status_history": [
+      { "status": "Applied", "date": "2024-02-20" },
+      { "status": "Interviewing", "date": "2024-03-01" },
+      { "status": "Interviewing", "date": "2024-03-12" }
+    ]
+  },
+  {
+    "id": 986542,
+    "title": "Security Engineer",
+    "company": "Sentinel One Labs",
+    "link": "https://sentinelonelabs.com/jobs/security",
+    "notes": "Panel interview scheduled; requires relocation.",
+    "tags": "On-Site",
+    "date_applied": "2024-02-27",
+    "status": "Applied",
+    "status_history": [
+      { "status": "Applied", "date": "2024-02-27" }
+    ]
+  },
+  {
+    "id": 987088,
+    "title": "Data Platform Lead",
+    "company": "Latitude Ventures",
+    "link": "https://jobs.latitude.vc/data-platform-lead",
+    "notes": "VC portfolio company seeking hands-on lead.",
+    "tags": "Remote,Referral",
+    "date_applied": "2024-03-04",
+    "status": "Offer",
+    "status_history": [
+      { "status": "Applied", "date": "2024-03-04" },
+      { "status": "Interviewing", "date": "2024-03-18" },
+      { "status": "Offer", "date": "2024-04-02" }
+    ]
+  },
+  {
+    "id": 987654,
+    "title": "Site Reliability Engineer",
+    "company": "Atlas Maps",
+    "link": "https://atlasmaps.com/careers/sre",
+    "notes": "Discussed on-call rotations; hybrid schedule.",
+    "tags": "Hybrid,Urgent",
+    "date_applied": "2024-03-08",
+    "status": "Interviewing",
+    "status_history": [
+      { "status": "Applied", "date": "2024-03-08" },
+      { "status": "Interviewing", "date": "2024-03-20" },
+      { "status": "Interviewing", "date": "2024-04-03" }
+    ]
+  },
+  {
+    "id": 988112,
+    "title": "Research Engineer",
+    "company": "DeepNorth AI",
+    "link": "https://deepnorth.ai/careers/research-engineer",
+    "notes": "PhD-heavy team; waiting on feedback from panel.",
+    "tags": "Remote",
+    "date_applied": "2024-03-15",
+    "status": "Applied",
+    "status_history": [
+      { "status": "Applied", "date": "2024-03-15" }
+    ]
+  },
+  {
+    "id": 988540,
+    "title": "Senior Product Designer",
+    "company": "Waveform Finance",
+    "link": "https://waveform.finance/careers/product-designer",
+    "notes": "Design exercise complete; feedback pending.",
+    "tags": "Remote,Referral",
+    "date_applied": "2024-03-19",
+    "status": "Rejected",
+    "status_history": [
+      { "status": "Applied", "date": "2024-03-19" },
+      { "status": "Interviewing", "date": "2024-04-01" },
+      { "status": "Rejected", "date": "2024-04-08" }
+    ]
+  },
+  {
+    "id": 989005,
+    "title": "Analytics Engineer",
+    "company": "Brightleaf Foods",
+    "link": "https://brightleaffoods.com/careers/analytics-engineer",
+    "notes": "On-site plant tour included in final round.",
+    "tags": "On-Site",
+    "date_applied": "2024-03-25",
+    "status": "Interviewing",
+    "status_history": [
+      { "status": "Applied", "date": "2024-03-25" },
+      { "status": "Interviewing", "date": "2024-04-05" }
+    ]
+  },
+  {
+    "id": 989442,
+    "title": "Growth Marketing Manager",
+    "company": "Orbit Commerce",
+    "link": "https://orbitcommerce.com/jobs/growth-marketing-manager",
+    "notes": "Case presentation scheduled for next sprint.",
+    "tags": "Hybrid,Startup",
+    "date_applied": "2024-03-29",
+    "status": "Applied",
+    "status_history": [
+      { "status": "Applied", "date": "2024-03-29" }
+    ]
+  },
+  {
+    "id": 989980,
+    "title": "Solutions Architect",
+    "company": "Cobalt Systems",
+    "link": "https://cobaltsystems.com/careers/solutions-architect",
+    "notes": "Government contract; security clearance required.",
+    "tags": "On-Site",
+    "date_applied": "2024-04-02",
+    "status": "Rejected",
+    "status_history": [
+      { "status": "Applied", "date": "2024-04-02" },
+      { "status": "Rejected", "date": "2024-04-15" }
+    ]
+  }
+]
