@@ -6,6 +6,7 @@ import DemoBanner from "./components/DemoBanner";
 import PersonalBanner from "./components/PersonalBanner";
 import OnboardingModal from "./components/OnboardingModal";
 import ModeBadge from "./components/ModeBadge";
+import AdminStats from "./components/AdminStats";
 import { useMode } from "./context/ModeContext";
 import { MODES, createStoreForMode } from "./storage/selectStore";
 import SettingsDrawer from "./components/SettingsDrawer";
@@ -609,6 +610,7 @@ function App() {
       </div>
 
       {isDemoMode && <DemoBanner onReset={handleResetDemo} />}
+      {mode === MODES.ADMIN && apiKey && <AdminStats apiKey={apiKey} />}
       {mode === MODES.LOCAL && showPersonalBanner && (
         <PersonalBanner
           onDismiss={() => {
