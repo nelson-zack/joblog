@@ -3,20 +3,18 @@
  * --------
  * Lightweight controlled form for creating a Job.
  * - Normalizes dates to strict YYYY-MM-DD (local time for "today" defaults).
- * - Emits the created job via onJobAdded after a successful POST.
+ * - Emits the created job via onCreateJob for persistence.
  * - Stores tags as a comma-separated string (kept for backward compat).
  *
  * Props
- *  - onJobAdded(job): function called with the created job response.
- *  - apiKey: optional string; appended as ?key=... to support admin/demo mode.
- *  - demoMode: when true, emits jobs locally without calling the API.
- *  - onDemoAdd(job): optional callback used to add jobs in demo mode.
+ *  - onCreateJob(job): async function that persists the job using the active store.
+ *  - mode: the current app mode (demo, local, or admin).
  *
  * Note: some helpers here are duplicated in JobList. Consider extracting to
  * /frontend/src/utils/date.ts(x) in a follow-up so the app uses one source.
  */
 import React, { useState } from 'react';
-import axios from 'axios';
+import { MODES } from '../storage/selectStore';
 
 /**
  * Normalize a date string into strict YYYY-MM-DD.
@@ -44,7 +42,7 @@ const todayYMD = () => {
   return `${y}-${m}-${day}`;
 };
 
-const JobForm = ({ onJobAdded, apiKey, demoMode = false, onDemoAdd }) => {
+const JobForm = ({ onCreateJob, mode }) => {
   const [formData, setFormData] = useState({
     title: '',
     company: '',
@@ -77,7 +75,7 @@ const JobForm = ({ onJobAdded, apiKey, demoMode = false, onDemoAdd }) => {
     setFormData({ ...formData, [e.target.name]: e.target.value });
   };
 
-  const handleSubmit = (e) => {
+  const handleSubmit = async (e) => {
     e.preventDefault();
     const resolvedDate = normalizeYMD(formData.date_applied || todayYMD());
     const tagsNorm = selectedTags
@@ -97,12 +95,8 @@ const JobForm = ({ onJobAdded, apiKey, demoMode = false, onDemoAdd }) => {
       ]
     };
 
-    if (demoMode && typeof onDemoAdd === 'function') {
-      const demoJob = {
-        ...payload,
-        id: Date.now() + Math.floor(Math.random() * 1000)
-      };
-      onDemoAdd(demoJob);
+    try {
+      await onCreateJob?.(payload);
       setFormData({
         title: '',
         company: '',
@@ -113,28 +107,14 @@ const JobForm = ({ onJobAdded, apiKey, demoMode = false, onDemoAdd }) => {
         status_history: []
       });
       setSelectedTags([]);
-      return;
+    } catch (error) {
+      console.error('Error creating job:', error);
+      if (mode === MODES.ADMIN) {
+        alert(
+          'Something went wrong while saving to the server. Please retry or check the console for details.'
+        );
+      }
     }
-
-    const query = apiKey ? `?key=${apiKey}` : '';
-
-    // Build normalized payload: strict date + comma-joined tags + initial status entry
-    axios
-      .post(`${import.meta.env.VITE_API_BASE_URL}/jobs/${query}`, payload)
-      .then((res) => {
-        onJobAdded(res.data);
-        setFormData({
-          title: '',
-          company: '',
-          link: '',
-          status: 'Applied',
-          date_applied: '',
-          notes: '',
-          status_history: []
-        });
-        setSelectedTags([]);
-      })
-      .catch((err) => console.error('Error adding job:', err));
   };
 
   return (

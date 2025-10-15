@@ -14,8 +14,8 @@ A full-stack web app to track, organize, and analyze job applications — and th
 - 7-day application trend chart (Bar graph)
 - Status history tracking (every status change is logged)
 - Enhanced analytics (based on full status history, not just current state)
-- Admin-only editing via secure API key (public visitors view in read-only demo mode)
-- “Demo Mode” banner shown to public visitors
+- Multi-mode support: Admin (API), Personal (IndexedDB), and Demo (sessionStorage) with onboarding chooser
+- Mode badge, inline banners, and backup reminders so visitors always know which mode they are using, how data is stored, and how to stay safe
 - Loading spinner during backend startup (Render cold start)
 - React frontend communicates with FastAPI backend using Axios
 - Backend stores jobs in a PostgreSQL database using SQLAlchemy ORM
@@ -49,12 +49,19 @@ A full-stack web app to track, organize, and analyze job applications — and th
 - **Frontend**: https://joblog.zacknelson.dev
 - **Backend API**: https://joblog-api.onrender.com
 
-## Demo Mode
+## Modes
 
-- Visiting the site without a `?key=...` query string runs Job Log fully in the browser with the bundled dataset from `frontend/src/mock/jobs.sample.json` (strict `YYYY-MM-DD` dates, realistic histories).
-- You can add, edit, and delete jobs in demo mode; changes persist for the current tab via `sessionStorage` and never leave the browser.
-- Click **Reset Demo** to restore the original seeded dataset at any time.
-- Supplying a valid key (e.g. `?key=your-admin-key`) reconnects to the live API so authenticated users can manage their private data—now over 250 real applications tracked securely.
+- **Personal (Local)** — When no `?key=` is present and you choose *Personal* on first launch, JobLog stores everything privately in IndexedDB. Changes persist across browser sessions, you can export/import JSON backups, and nothing is synced or uploaded. Dismissible reminders keep users aware of backup best practices.
+- **Public Demo** — Also available without a key. Choose *Demo* to load a curated dataset (dates dynamically align with “last 7 days” for believable analytics). Data lives in `sessionStorage`, so it disappears when the tab closes or when you hit Reset Demo. A dashed amber banner reinforces that the data is ephemeral.
+- **Admin (Private)** — Visiting with a valid `?key=...` keeps the original server-backed behavior: FastAPI, PostgreSQL, and all real data. This is how the private production instance continues to track 250+ applications.
+
+An onboarding modal guides first-time visitors without keys. You can revisit the choice from the Settings drawer.
+
+### Privacy & Backups
+
+- Local/Demo modes never fire axios/fetch calls; they only interact with browser storage.
+- Personal mode offers a backup reminder if you haven’t exported in 30+ days. Use **Settings → Export JSON** to capture versioned backups or **Import JSON** to restore, and you can re-show the reminder anytime from Settings.
+- CSV export is available in Settings for quick sharing, but remember that personal mode has no cross-device sync yet—you’ll need to import your JSON backup on another device manually.
 
 ## Tech Stack
 
