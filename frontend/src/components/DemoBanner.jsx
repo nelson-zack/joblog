@@ -1,13 +1,13 @@
 import React from 'react';
 
 const DemoBanner = ({ onReset = () => {} }) => (
-  <div className='mb-6 rounded-lg border border-light-accent/40 bg-light-background p-4 text-sm text-light-text shadow-sm dark:border-dark-accent/60 dark:bg-dark-card dark:text-dark-text'>
+  <div className='mb-6 rounded-lg border border-light-accent/35 bg-light-accent/10 p-4 text-sm text-light-accent shadow-sm dark:border-dark-accent/50 dark:bg-dark-card dark:text-dark-accent'>
     <div className='flex flex-col gap-3 md:flex-row md:items-center md:justify-between'>
       <div>
         <p className='font-medium text-light-accent dark:text-dark-accent'>
           Demo data only — personal data hidden for privacy.
         </p>
-        <p className='mt-1 text-xs text-gray-600 dark:text-gray-300'>
+        <p className='mt-1 text-xs text-light-accent/80 dark:text-dark-accent/80'>
           Changes persist locally for this tab using sessionStorage. Reset anytime to restore the bundled sample data.
         </p>
       </div>
