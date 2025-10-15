@@ -1,7 +1,7 @@
 import React from 'react';
 
 const PersonalBanner = ({ onDismiss }) => (
-  <div className='mb-6 rounded-lg border border-light-accent/35 bg-light-accent/10 px-4 py-3 text-sm text-light-accent shadow-sm dark:border-dark-accent/40 dark:bg-dark-accent/15 dark:text-dark-accent'>
+  <div className='mb-6 rounded-lg border border-light-accent/35 bg-light-accent/10 px-4 py-3 text-sm text-light-accent shadow-sm dark:border-dark-accent/50 dark:bg-dark-card dark:text-dark-accent'>
     <div className='flex items-start justify-between gap-3'>
       <div>
         <p className='font-semibold text-light-accent dark:text-dark-accent'>
