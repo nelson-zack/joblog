@@ -432,8 +432,8 @@ function App() {
               onClick={() => setDarkMode(!darkMode)}
               className={`text-sm border px-3 py-1 rounded transition focus:outline-none focus:ring-2 focus:ring-light-accent dark:focus:ring-dark-accent ${
                 darkMode
-                  ? "border-dark-accent text-dark-text bg-dark-card hover:shadow-[0_0_14px_#22d3ee]"
-                  : "border-light-accent text-light-text hover:bg-light-accent hover:text-white"
+                  ? "border-dark-accent text-dark-accent hover:text-white hover:bg-dark-card dark:hover:border-dark-accent dark:hover:shadow-[0_0_14px_#22d3ee]"
+                  : "border-light-accent text-light-accent hover:bg-light-accent hover:text-white"
               }`}
             >
               {darkMode ? "Light Mode" : "Dark Mode"}
