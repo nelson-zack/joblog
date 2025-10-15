@@ -12,6 +12,7 @@ const SettingsDrawer = ({
   open,
   onClose,
   mode,
+  onSelectMode,
   onExportJson,
   onImportJson,
   onExportCsv,
@@ -34,6 +35,34 @@ const SettingsDrawer = ({
     }
     return 'Demo data is stored in sessionStorage and resets when you end the session.';
   }, [isAdmin, isLocal]);
+
+  const ModeSwitchButton = ({ target, title, description }) => {
+    const active = mode === target;
+    return (
+      <button
+        type='button'
+        disabled={active}
+        onClick={() => onSelectMode?.(target)}
+        className={`${actionButton} ${
+          active
+            ? 'border-light-accent bg-light-accent/10 dark:border-dark-accent dark:bg-dark-accent/10'
+            : ''
+        } ${isAdmin ? disabledButton : ''}`}
+      >
+        <div className='flex items-center justify-between'>
+          <span className='font-semibold'>{title}</span>
+          {active && (
+            <span className='text-xs uppercase text-light-accent dark:text-dark-accent'>
+              Active
+            </span>
+          )}
+        </div>
+        <p className='mt-1 text-xs font-normal text-gray-500 dark:text-gray-300'>
+          {description}
+        </p>
+      </button>
+    );
+  };
 
   const triggerImport = () => {
     if (!fileInputRef.current) return;
@@ -86,6 +115,24 @@ const SettingsDrawer = ({
             {modeDescription}
           </span>
         </div>
+
+        {!isAdmin && (
+          <div className='mt-6 space-y-3'>
+            <p className='text-xs font-semibold uppercase tracking-wide text-gray-500 dark:text-gray-300'>
+              Choose mode
+            </p>
+            <ModeSwitchButton
+              target={MODES.LOCAL}
+              title='Personal (Local)'
+              description='Store data privately in IndexedDB with full read/write access and backups.'
+            />
+            <ModeSwitchButton
+              target={MODES.DEMO}
+              title='Public Demo'
+              description='Use curated sample data backed by sessionStorage. Resets on close.'
+            />
+          </div>
+        )}
 
         {reminder ? (
           <div className='mt-4 rounded-lg border border-amber-400/60 bg-amber-50 p-4 text-sm text-amber-700 dark:border-amber-300/60 dark:bg-amber-900/20 dark:text-amber-200'>
