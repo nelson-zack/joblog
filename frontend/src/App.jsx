@@ -449,6 +449,11 @@ function App() {
         open={settingsOpen}
         onClose={() => setSettingsOpen(false)}
         mode={mode}
+        onSelectMode={(nextMode) => {
+          if (nextMode && nextMode !== mode) {
+            setMode(nextMode);
+          }
+        }}
         onExportJson={handleExportJson}
         onImportJson={handleImportJson}
         onExportCsv={handleExportCsv}
