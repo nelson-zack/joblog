@@ -139,7 +139,10 @@ function App() {
   const [jobs, setJobs] = useState([]);
   const [loading, setLoading] = useState(true);
   const [darkMode, setDarkMode] = useState(() => {
-    return localStorage.getItem("darkMode") === "true";
+    const stored = localStorage.getItem("darkMode");
+    if (stored === "true") return true;
+    if (stored === "false") return false;
+    return true;
   }); // New state for dark mode
   const [settingsOpen, setSettingsOpen] = useState(false);
   const [store, setStore] = useState(null);

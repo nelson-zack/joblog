@@ -109,8 +109,8 @@ const SettingsDrawer = ({
           </button>
         </div>
 
-        <div className='mt-4 flex items-center justify-between rounded-lg bg-light-background px-4 py-3 text-sm shadow-inner dark:bg-dark-background'>
-          <ModeBadge />
+        <div className='mt-4 flex items-center justify-between gap-4 rounded-lg bg-light-background px-4 py-3 text-sm shadow-inner dark:bg-dark-background'>
+          <ModeBadge className='shrink-0' />
           <span className='text-xs text-gray-600 dark:text-gray-300'>
             {modeDescription}
           </span>
@@ -213,7 +213,7 @@ const SettingsDrawer = ({
             className={`${actionButton} ${
               isAdmin
                 ? disabledButton
-                : 'border-red-400/50 hover:border-red-400 dark:border-red-300/50 dark:hover:border-red-300'
+                : 'border-red-400/70 hover:border-red-500 focus:ring-red-400 dark:border-red-400/60 dark:hover:border-red-300 dark:focus:ring-red-400'
             }`}
             disabled={isAdmin}
           >
