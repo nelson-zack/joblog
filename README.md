@@ -15,7 +15,7 @@ A full-stack web app to track, organize, and analyze job applications — and th
 - Status history tracking (every status change is logged)
 - Enhanced analytics (based on full status history, not just current state)
 - Multi-mode support: Admin (API), Personal (IndexedDB), and Demo (sessionStorage) with onboarding chooser
-- Mode badge and contextual messaging so visitors always know which mode they are using
+- Mode badge, inline banners, and backup reminders so visitors always know which mode they are using, how data is stored, and how to stay safe
 - Loading spinner during backend startup (Render cold start)
 - React frontend communicates with FastAPI backend using Axios
 - Backend stores jobs in a PostgreSQL database using SQLAlchemy ORM
@@ -51,8 +51,8 @@ A full-stack web app to track, organize, and analyze job applications — and th
 
 ## Modes
 
-- **Personal (Local)** — When no `?key=` is present and you choose *Personal* on first launch, JobLog stores everything privately in IndexedDB. Changes persist across browser sessions, you can export/import JSON backups, and nothing is synced or uploaded.
-- **Public Demo** — Also available without a key. Choose *Demo* to load a curated dataset (dates dynamically align with “last 7 days” for believable analytics). Data lives in `sessionStorage`, so it disappears when the tab closes or when you hit Reset Demo.
+- **Personal (Local)** — When no `?key=` is present and you choose *Personal* on first launch, JobLog stores everything privately in IndexedDB. Changes persist across browser sessions, you can export/import JSON backups, and nothing is synced or uploaded. Dismissible reminders keep users aware of backup best practices.
+- **Public Demo** — Also available without a key. Choose *Demo* to load a curated dataset (dates dynamically align with “last 7 days” for believable analytics). Data lives in `sessionStorage`, so it disappears when the tab closes or when you hit Reset Demo. A dashed amber banner reinforces that the data is ephemeral.
 - **Admin (Private)** — Visiting with a valid `?key=...` keeps the original server-backed behavior: FastAPI, PostgreSQL, and all real data. This is how the private production instance continues to track 250+ applications.
 
 An onboarding modal guides first-time visitors without keys. You can revisit the choice from the Settings drawer.
@@ -60,7 +60,7 @@ An onboarding modal guides first-time visitors without keys. You can revisit the
 ### Privacy & Backups
 
 - Local/Demo modes never fire axios/fetch calls; they only interact with browser storage.
-- Personal mode offers a backup reminder if you haven’t exported in 30+ days. Use **Settings → Export JSON** to capture versioned backups or **Import JSON** to restore.
+- Personal mode offers a backup reminder if you haven’t exported in 30+ days. Use **Settings → Export JSON** to capture versioned backups or **Import JSON** to restore, and you can re-show the reminder anytime from Settings.
 - CSV export is available in Settings for quick sharing, but remember that personal mode has no cross-device sync yet—you’ll need to import your JSON backup on another device manually.
 
 ## Tech Stack
