@@ -420,13 +420,21 @@ function App() {
           <div className="flex items-center gap-2">
             <button
               onClick={() => setSettingsOpen(true)}
-              className="text-sm border px-3 py-1 rounded border-light-accent text-light-accent transition hover:bg-light-accent hover:text-white focus:outline-none focus:ring-2 focus:ring-light-accent dark:border-dark-accent dark:text-dark-accent dark:hover:border-dark-accent dark:hover:bg-dark-card dark:hover:text-white dark:focus:ring-dark-accent"
+              className={`text-sm border px-3 py-1 rounded transition focus:outline-none focus:ring-2 focus:ring-light-accent dark:focus:ring-dark-accent ${
+                darkMode
+                  ? "border-dark-accent text-dark-accent hover:bg-dark-card hover:text-white dark:hover:border-dark-accent dark:hover:shadow-[0_0_14px_#22d3ee]"
+                  : "border-light-accent text-light-accent hover:bg-light-accent hover:text-white"
+              }`}
             >
               Settings
             </button>
             <button
               onClick={() => setDarkMode(!darkMode)}
-              className="text-sm border px-3 py-1 rounded border-light-accent dark:border-dark-accent hover:bg-light-accent hover:text-white dark:hover:bg-dark-card dark:hover:shadow-[0_0_10px_#22d3ee] transition focus:outline-none focus:ring-2 focus:ring-light-accent dark:focus:ring-dark-accent"
+              className={`text-sm border px-3 py-1 rounded transition focus:outline-none focus:ring-2 focus:ring-light-accent dark:focus:ring-dark-accent ${
+                darkMode
+                  ? "border-dark-accent text-dark-text bg-dark-card hover:shadow-[0_0_14px_#22d3ee]"
+                  : "border-light-accent text-light-text hover:bg-light-accent hover:text-white"
+              }`}
             >
               {darkMode ? "Light Mode" : "Dark Mode"}
             </button>
