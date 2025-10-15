@@ -4,6 +4,10 @@ import JobForm from "./components/JobForm";
 import JobList from "./components/JobList";
 import ApplicationTrends from "./components/ApplicationTrends";
 import DemoBanner from "./components/DemoBanner";
+import OnboardingModal from "./components/OnboardingModal";
+import ModeBadge from "./components/ModeBadge";
+import { useMode } from "./context/ModeContext";
+import { MODES } from "./storage/selectStore";
 import mockJobs from "./mock/jobs.sample.json";
 
 const DEMO_STORAGE_KEY = "joblog_demo_state_v1";
@@ -172,11 +176,8 @@ function App() {
     return localStorage.getItem("darkMode") === "true";
   }); // New state for dark mode
 
-  // Extract API key from URL query string
-  const params = new URLSearchParams(window.location.search);
-  const apiKey = params.get("key");
-  const hasAdminKey = Boolean(apiKey);
-  const isDemo = !hasAdminKey;
+  const { mode, apiKey, hasAdmin, needsOnboarding, setMode } = useMode();
+  const isDemo = mode !== MODES.ADMIN;
 
   const handleJobAdded = (newJob) => {
     setJobs((prev) => [...prev, newJob]);
@@ -221,7 +222,7 @@ function App() {
   };
 
   useEffect(() => {
-    if (hasAdminKey) {
+    if (hasAdmin) {
       setLoading(true);
       axios
         .get(
@@ -238,7 +239,7 @@ function App() {
     const demoJobs = loadDemoJobs();
     setJobs(demoJobs);
     setLoading(false);
-  }, [hasAdminKey, apiKey]);
+  }, [hasAdmin, apiKey]);
 
   useEffect(() => {
     if (darkMode) {
@@ -263,8 +264,11 @@ function App() {
   return (
     <div className="min-h-screen bg-light-background text-light-text dark:bg-dark-background dark:text-dark-text dark:font-mono p-8 transition-colors duration-500 ease-in-out">
       <div className="bg-light-card dark:bg-dark-card rounded-xl shadow-sm p-6 mb-6 transition-colors duration-500">
-        <div className="flex justify-between items-center mb-6">
-          <h1 className="text-2xl font-bold">Job Log</h1>
+        <div className="mb-6 flex flex-col gap-4 md:flex-row md:items-center md:justify-between">
+          <div className="flex items-center gap-3">
+            <h1 className="text-2xl font-bold">Job Log</h1>
+            <ModeBadge />
+          </div>
           <button
             onClick={() => setDarkMode(!darkMode)}
             className="text-sm border px-3 py-1 rounded border-light-accent dark:border-dark-accent hover:bg-light-accent hover:text-white dark:hover:bg-dark-card dark:hover:shadow-[0_0_10px_#22d3ee] transition focus:outline-none focus:ring-2 focus:ring-light-accent dark:focus:ring-dark-accent"
@@ -292,6 +296,7 @@ function App() {
         onDemoDelete={handleDemoDelete}
       />
 
+      <OnboardingModal open={needsOnboarding} onSelect={setMode} />
     </div>
   );
 }
