@@ -8,6 +8,8 @@ import OnboardingModal from "./components/OnboardingModal";
 import ModeBadge from "./components/ModeBadge";
 import { useMode } from "./context/ModeContext";
 import { MODES } from "./storage/selectStore";
+import SettingsDrawer from "./components/SettingsDrawer";
+import { DATA_EXPORT_VERSION, exportBundleSchema } from "./storage/store";
 import mockJobs from "./mock/jobs.sample.json";
 
 const DEMO_STORAGE_KEY = "joblog_demo_state_v1";
@@ -175,6 +177,7 @@ function App() {
   const [darkMode, setDarkMode] = useState(() => {
     return localStorage.getItem("darkMode") === "true";
   }); // New state for dark mode
+  const [settingsOpen, setSettingsOpen] = useState(false);
 
   const { mode, apiKey, hasAdmin, needsOnboarding, setMode } = useMode();
   const isDemo = mode !== MODES.ADMIN;
@@ -219,6 +222,96 @@ function App() {
     resetDemoJobs();
     saveDemoJobs(seedJobs);
     setJobs(seedJobs);
+  };
+
+  const downloadFile = (filename, content, type) => {
+    const blob = new Blob([content], { type });
+    const url = URL.createObjectURL(blob);
+    const link = document.createElement("a");
+    link.href = url;
+    link.setAttribute("download", filename);
+    document.body.appendChild(link);
+    link.click();
+    link.remove();
+    URL.revokeObjectURL(url);
+  };
+
+  const handleExportJson = () => {
+    if (mode === MODES.ADMIN) {
+      console.warn("Export JSON is disabled in admin mode.");
+      return;
+    }
+    const bundle = {
+      version: DATA_EXPORT_VERSION,
+      jobs,
+    };
+    downloadFile(
+      `joblog-backup-${new Date().toISOString().slice(0, 10)}.json`,
+      JSON.stringify(bundle, null, 2),
+      "application/json"
+    );
+  };
+
+  const handleExportCsv = () => {
+    const headers = [
+      "Title",
+      "Company",
+      "Status",
+      "Date Applied",
+      "Tags",
+      "Notes",
+      "Link",
+    ];
+    const rows = jobs.map((job) => [
+      job.title,
+      job.company,
+      job.status,
+      job.date_applied,
+      job.tags,
+      job.notes?.replace(/\n/g, " "),
+      job.link,
+    ]);
+    const csvContent = [headers, ...rows]
+      .map((row) => row.map((cell) => `"${cell || ""}"`).join(","))
+      .join("\n");
+
+    downloadFile(
+      `joblog-export-${new Date().toISOString().slice(0, 10)}.csv`,
+      csvContent,
+      "text/csv;charset=utf-8;"
+    );
+  };
+
+  const handleImportJson = async (text) => {
+    if (mode === MODES.ADMIN) {
+      throw new Error("Import is not available in admin mode.");
+    }
+    let parsed;
+    try {
+      parsed = JSON.parse(text);
+    } catch (error) {
+      throw new Error("Invalid JSON: unable to parse file.");
+    }
+    const bundle = exportBundleSchema.parse(parsed);
+    setJobs(bundle.jobs);
+    saveDemoJobs(bundle.jobs);
+  };
+
+  const handleClearData = () => {
+    if (mode === MODES.ADMIN) return;
+    if (
+      !window.confirm(
+        "This will remove all entries in the current mode. Continue?"
+      )
+    ) {
+      return;
+    }
+    if (mode === MODES.DEMO) {
+      handleResetDemo();
+    } else {
+      setJobs([]);
+      saveDemoJobs([]);
+    }
   };
 
   useEffect(() => {
@@ -269,12 +362,20 @@ function App() {
             <h1 className="text-2xl font-bold">Job Log</h1>
             <ModeBadge />
           </div>
-          <button
-            onClick={() => setDarkMode(!darkMode)}
-            className="text-sm border px-3 py-1 rounded border-light-accent dark:border-dark-accent hover:bg-light-accent hover:text-white dark:hover:bg-dark-card dark:hover:shadow-[0_0_10px_#22d3ee] transition focus:outline-none focus:ring-2 focus:ring-light-accent dark:focus:ring-dark-accent"
-          >
-            {darkMode ? "Light Mode" : "Dark Mode"}
-          </button>
+          <div className="flex items-center gap-2">
+            <button
+              onClick={() => setSettingsOpen(true)}
+              className="text-sm border px-3 py-1 rounded border-light-accent text-light-accent transition hover:bg-light-accent hover:text-white focus:outline-none focus:ring-2 focus:ring-light-accent dark:border-dark-accent dark:text-dark-accent dark:hover:bg-dark-card dark:hover:text-white"
+            >
+              Settings
+            </button>
+            <button
+              onClick={() => setDarkMode(!darkMode)}
+              className="text-sm border px-3 py-1 rounded border-light-accent dark:border-dark-accent hover:bg-light-accent hover:text-white dark:hover:bg-dark-card dark:hover:shadow-[0_0_10px_#22d3ee] transition focus:outline-none focus:ring-2 focus:ring-light-accent dark:focus:ring-dark-accent"
+            >
+              {darkMode ? "Light Mode" : "Dark Mode"}
+            </button>
+          </div>
         </div>
       </div>
 
@@ -296,6 +397,15 @@ function App() {
         onDemoDelete={handleDemoDelete}
       />
 
+      <SettingsDrawer
+        open={settingsOpen}
+        onClose={() => setSettingsOpen(false)}
+        mode={mode}
+        onExportJson={handleExportJson}
+        onImportJson={handleImportJson}
+        onExportCsv={handleExportCsv}
+        onClearData={handleClearData}
+      />
       <OnboardingModal open={needsOnboarding} onSelect={setMode} />
     </div>
   );
