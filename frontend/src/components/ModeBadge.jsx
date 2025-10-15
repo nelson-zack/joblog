@@ -16,7 +16,7 @@ const getStyles = (mode) => {
       return 'bg-light-accent/10 text-light-accent border border-light-accent/40 dark:bg-dark-accent/10 dark:text-dark-accent dark:border-dark-accent/40';
     case MODES.DEMO:
     default:
-      return 'bg-light-tag-remoteBg text-light-accent border border-light-accent/40 dark:bg-dark-card dark:text-dark-accent dark:border-dark-accent/40';
+      return 'bg-amber-400/15 text-amber-600 border border-amber-400/50 dark:bg-amber-400/10 dark:text-amber-200 dark:border-amber-300/40';
   }
 };
 
