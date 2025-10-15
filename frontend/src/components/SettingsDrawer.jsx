@@ -92,8 +92,11 @@ const SettingsDrawer = ({
   if (!open) return null;
 
   return (
-    <div className='fixed inset-0 z-40 flex justify-end bg-black/40'>
-      <div className='h-full w-full max-w-md overflow-y-auto bg-light-card p-6 text-light-text shadow-xl dark:bg-dark-card dark:text-dark-text'>
+    <div className='fixed inset-0 z-40 flex justify-end bg-black/40' onClick={onClose}>
+      <div
+        className='h-full w-full max-w-md overflow-y-auto bg-light-card p-6 text-light-text shadow-xl dark:bg-dark-card dark:text-dark-text'
+        onClick={(event) => event.stopPropagation()}
+      >
         <div className='flex items-start justify-between gap-4'>
           <div>
             <h2 className='text-xl font-bold'>Settings &amp; Backups</h2>
