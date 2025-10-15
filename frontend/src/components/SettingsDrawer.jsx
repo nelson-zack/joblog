@@ -235,8 +235,9 @@ const SettingsDrawer = ({
         )}
         {isLocal && (
           <p className='mt-4 text-xs text-gray-500 dark:text-gray-300'>
-            Personal mode never sends data to a server. Keep regular exports so
-            you can restore from backups if you change devices.
+            Personal mode never sends data to a server. Export JSON regularly—
+            clearing browser data, using private windows, or switching devices
+            will remove local entries unless you restore from a backup.
           </p>
         )}
       </div>

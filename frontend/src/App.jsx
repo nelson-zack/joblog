@@ -3,6 +3,7 @@ import JobForm from "./components/JobForm";
 import JobList from "./components/JobList";
 import ApplicationTrends from "./components/ApplicationTrends";
 import DemoBanner from "./components/DemoBanner";
+import PersonalBanner from "./components/PersonalBanner";
 import OnboardingModal from "./components/OnboardingModal";
 import ModeBadge from "./components/ModeBadge";
 import { useMode } from "./context/ModeContext";
@@ -147,6 +148,10 @@ function App() {
   const [settingsOpen, setSettingsOpen] = useState(false);
   const [store, setStore] = useState(null);
   const [lastBackupAt, setLastBackupAt] = useState(null);
+  const [showPersonalBanner, setShowPersonalBanner] = useState(() => {
+    const stored = localStorage.getItem("joblog_personal_banner_hidden_v1");
+    return stored !== "true";
+  });
 
   const { mode, apiKey, needsOnboarding, setMode } = useMode();
   const isDemoMode = mode === MODES.DEMO;
@@ -443,6 +448,14 @@ function App() {
       </div>
 
       {isDemoMode && <DemoBanner onReset={handleResetDemo} />}
+      {mode === MODES.LOCAL && showPersonalBanner && (
+        <PersonalBanner
+          onDismiss={() => {
+            setShowPersonalBanner(false);
+            localStorage.setItem("joblog_personal_banner_hidden_v1", "true");
+          }}
+        />
+      )}
 
       <JobForm onCreateJob={handleCreateJob} mode={mode} />
       <ApplicationTrends jobs={jobs} />
