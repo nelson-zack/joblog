@@ -9,14 +9,13 @@
  *  - Tags: stored CSV; checkboxes drive pill UI and filters.
  *
  * Props
- *  - jobs, setJobs: data and setter from the parent.
- *  - apiKey: optional key passed through for API access.
- *  - demoMode: when true, updates happen locally without API calls.
- *  - onDemoUpdate(id, updatedJob): optional handler for in-memory edits.
- *  - onDemoDelete(id): optional handler for in-memory deletions.
+ *  - jobs: array of job records to display.
+ *  - mode: current application mode (demo, local, admin).
+ *  - onUpdateJob(id, payload, helpers): async handler to persist edits.
+ *  - onDeleteJob(id): async handler to remove a job.
  */
 import React, { useState } from 'react';
-import axios from 'axios';
+import { MODES } from '../storage/selectStore';
 
 /**
  * Parse a strict YYYY-MM-DD into a UTC timestamp (ms).
@@ -55,16 +54,13 @@ const localTodayYMD = () => {
   return `${y}-${m}-${day}`;
 };
 
-const BASE_URL = import.meta.env.VITE_API_BASE_URL;
-
 const JobList = ({
   jobs,
-  setJobs,
-  apiKey,
-  demoMode = false,
-  onDemoUpdate,
-  onDemoDelete
+  mode,
+  onUpdateJob,
+  onDeleteJob
 }) => {
+  const isAdmin = mode === MODES.ADMIN;
   const [editJobId, setEditJobId] = useState(null);
   const [editFormData, setEditFormData] = useState({
     title: '',
@@ -95,21 +91,15 @@ const JobList = ({
   const [offerDate, setOfferDate] = useState(localTodayYMD());
   const [rejectDate, setRejectDate] = useState(localTodayYMD());
 
-  const adminKey =
-    apiKey ?? new URLSearchParams(window.location.search).get('key');
-
-  const handleDelete = (id) => {
-    if (demoMode && typeof onDemoDelete === 'function') {
-      onDemoDelete(id);
-      return;
+  const handleDelete = async (id) => {
+    try {
+      await onDeleteJob?.(id);
+    } catch (error) {
+      console.error('Error deleting job:', error);
+      if (isAdmin) {
+        alert('Failed to delete job on the server. Please try again.');
+      }
     }
-    const query = adminKey ? `?key=${adminKey}` : '';
-    axios
-      .delete(`${BASE_URL}/jobs/${id}${query}`)
-      .then(() => {
-        setJobs((prevJobs) => prevJobs.filter((job) => job.id !== id));
-      })
-      .catch((err) => console.error('Error deleting job:', err));
   };
 
   const handleEditClick = (job) => {
@@ -135,8 +125,7 @@ const JobList = ({
     setEditFormData({ ...editFormData, tags: updated.join(',') });
   };
 
-  const handleSave = () => {
-    const query = adminKey ? `?key=${adminKey}` : '';
+  const handleSave = async () => {
     const original = jobs.find((job) => job.id === editJobId);
     // Start from the latest server-backed history to avoid stale copies
     const updatedHistory = Array.isArray(original?.status_history)
@@ -233,89 +222,22 @@ const JobList = ({
       .join(',')
     };
 
-    if (demoMode && typeof onDemoUpdate === 'function') {
-      let updated = {
-        ...original,
-        ...payload
-      };
-
-      if (editFormData.status === 'Offer') {
-        const hasOffer =
-          Array.isArray(updated.status_history) &&
-          updated.status_history.some((s) => s.status === 'Offer');
-        if (!hasOffer) {
-          const d = normalizeYMD(offerDate) || localTodayYMD();
-          updated = {
-            ...updated,
-            status_history: [
-              ...(updated.status_history || []),
-              { status: 'Offer', date: d }
-            ]
-          };
-        }
-      } else if (editFormData.status === 'Rejected') {
-        const hasRejected =
-          Array.isArray(updated.status_history) &&
-          updated.status_history.some((s) => s.status === 'Rejected');
-        if (!hasRejected) {
-          const d = normalizeYMD(rejectDate) || localTodayYMD();
-          updated = {
-            ...updated,
-            status_history: [
-              ...(updated.status_history || []),
-              { status: 'Rejected', date: d }
-            ]
-          };
-        }
-      }
-
-      onDemoUpdate(editJobId, updated);
+    try {
+      await onUpdateJob?.(editJobId, payload, {
+        offerDate: normalizeYMD(offerDate) || localTodayYMD(),
+        rejectDate: normalizeYMD(rejectDate) || localTodayYMD()
+      });
       setEditJobId(null);
       setRoundDelta(0);
       setRoundAddDate(localTodayYMD());
       setOfferDate(localTodayYMD());
       setRejectDate(localTodayYMD());
-      return;
+    } catch (error) {
+      console.error('Error updating job:', error);
+      if (isAdmin) {
+        alert('Failed to update job on the server. Please try again.');
+      }
     }
-
-    axios
-      .put(`${BASE_URL}/jobs/${editJobId}${query}`, payload)
-      .then((res) => {
-        let updated = res.data;
-        // Optimistic: if server didn’t echo dated terminal entry, add it locally now
-        if (
-          editFormData.status === 'Offer' ||
-          editFormData.status === 'Rejected'
-        ) {
-          const key = editFormData.status;
-          const has =
-            Array.isArray(updated.status_history) &&
-            updated.status_history.some((s) => s.status === key);
-          if (!has) {
-            const d =
-              key === 'Offer'
-                ? normalizeYMD(offerDate) || localTodayYMD()
-                : normalizeYMD(rejectDate) || localTodayYMD();
-            updated = {
-              ...updated,
-              status_history: [
-                ...(updated.status_history || []),
-                { status: key, date: d }
-              ]
-            };
-          }
-        }
-
-        setJobs((prevJobs) =>
-          prevJobs.map((job) => (job.id === editJobId ? updated : job))
-        );
-        setEditJobId(null);
-        setRoundDelta(0);
-        setRoundAddDate(localTodayYMD());
-        setOfferDate(localTodayYMD());
-        setRejectDate(localTodayYMD());
-      })
-      .catch((err) => console.error('Error updating job:', err));
   };
 
   const downloadCSV = (data) => {

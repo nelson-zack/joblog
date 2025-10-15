@@ -146,40 +146,46 @@ function App() {
   const [lastBackupAt, setLastBackupAt] = useState(null);
 
   const { mode, apiKey, needsOnboarding, setMode } = useMode();
-  const isClientMode = mode !== MODES.ADMIN;
   const isDemoMode = mode === MODES.DEMO;
-  const isLocalMode = mode === MODES.LOCAL;
 
-  const handleJobAdded = (newJob) => {
-    setJobs((prev) => [...prev, newJob]);
-  };
+  const handleCreateJob = useCallback(
+    async (jobPayload) => {
+      if (!store) return null;
+      try {
+        return await store.createJob(jobPayload);
+      } catch (error) {
+        console.error("Failed to create job:", error);
+        throw error;
+      }
+    },
+    [store]
+  );
 
-  const handleDemoAdd = async (job) => {
-    if (!store) return;
-    try {
-      await store.createJob(job);
-    } catch (error) {
-      console.error("Failed to create job in current mode:", error);
-    }
-  };
+  const handleUpdateJob = useCallback(
+    async (id, patch) => {
+      if (!store) return null;
+      try {
+        return await store.updateJob(id, patch);
+      } catch (error) {
+        console.error("Failed to update job:", error);
+        throw error;
+      }
+    },
+    [store]
+  );
 
-  const handleDemoUpdate = async (id, patch) => {
-    if (!store) return;
-    try {
-      await store.updateJob(id, patch);
-    } catch (error) {
-      console.error("Failed to update job in current mode:", error);
-    }
-  };
-
-  const handleDemoDelete = async (id) => {
-    if (!store) return;
-    try {
-      await store.deleteJob(id);
-    } catch (error) {
-      console.error("Failed to delete job in current mode:", error);
-    }
-  };
+  const handleDeleteJob = useCallback(
+    async (id) => {
+      if (!store) return;
+      try {
+        await store.deleteJob(id);
+      } catch (error) {
+        console.error("Failed to delete job:", error);
+        throw error;
+      }
+    },
+    [store]
+  );
 
   const handleResetDemo = async () => {
     if (!store) return;
@@ -427,20 +433,13 @@ function App() {
 
       {isDemoMode && <DemoBanner onReset={handleResetDemo} />}
 
-      <JobForm
-        onJobAdded={handleJobAdded}
-        apiKey={apiKey}
-        demoMode={isClientMode}
-        onDemoAdd={handleDemoAdd}
-      />
+      <JobForm onCreateJob={handleCreateJob} mode={mode} />
       <ApplicationTrends jobs={jobs} />
       <JobList
         jobs={jobs}
-        setJobs={setJobs}
-        apiKey={apiKey}
-        demoMode={isClientMode}
-        onDemoUpdate={handleDemoUpdate}
-        onDemoDelete={handleDemoDelete}
+        mode={mode}
+        onUpdateJob={handleUpdateJob}
+        onDeleteJob={handleDeleteJob}
       />
 
       <SettingsDrawer
