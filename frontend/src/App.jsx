@@ -1,5 +1,4 @@
-import React, { useState, useEffect } from "react";
-import axios from "axios";
+import React, { useState, useEffect, useMemo, useCallback } from "react";
 import JobForm from "./components/JobForm";
 import JobList from "./components/JobList";
 import ApplicationTrends from "./components/ApplicationTrends";
@@ -7,12 +6,11 @@ import DemoBanner from "./components/DemoBanner";
 import OnboardingModal from "./components/OnboardingModal";
 import ModeBadge from "./components/ModeBadge";
 import { useMode } from "./context/ModeContext";
-import { MODES } from "./storage/selectStore";
+import { MODES, createStoreForMode } from "./storage/selectStore";
 import SettingsDrawer from "./components/SettingsDrawer";
 import { DATA_EXPORT_VERSION, exportBundleSchema } from "./storage/store";
 import mockJobs from "./mock/jobs.sample.json";
 
-const DEMO_STORAGE_KEY = "joblog_demo_state_v1";
 const MS_PER_DAY = 24 * 60 * 60 * 1000;
 
 const cloneSeedJobs = () => JSON.parse(JSON.stringify(mockJobs));
@@ -137,40 +135,6 @@ const ensureRecentActivity = (jobs, daysWindow = 7) => {
 const createAlignedDemoSeed = () =>
   ensureRecentActivity(alignJobsNearToday(cloneSeedJobs()));
 
-const loadDemoJobs = () => {
-  if (typeof window === "undefined") {
-    return createAlignedDemoSeed();
-  }
-
-  try {
-    const raw = window.sessionStorage.getItem(DEMO_STORAGE_KEY);
-    if (!raw) return createAlignedDemoSeed();
-    const parsed = JSON.parse(raw);
-    return Array.isArray(parsed) ? parsed : createAlignedDemoSeed();
-  } catch (error) {
-    console.warn("Failed to load demo jobs from sessionStorage:", error);
-    return createAlignedDemoSeed();
-  }
-};
-
-const saveDemoJobs = (jobs) => {
-  if (typeof window === "undefined") return;
-  try {
-    window.sessionStorage.setItem(DEMO_STORAGE_KEY, JSON.stringify(jobs));
-  } catch (error) {
-    console.warn("Failed to save demo jobs to sessionStorage:", error);
-  }
-};
-
-const resetDemoJobs = () => {
-  if (typeof window === "undefined") return;
-  try {
-    window.sessionStorage.removeItem(DEMO_STORAGE_KEY);
-  } catch (error) {
-    console.warn("Failed to reset demo jobs in sessionStorage:", error);
-  }
-};
-
 function App() {
   const [jobs, setJobs] = useState([]);
   const [loading, setLoading] = useState(true);
@@ -178,50 +142,52 @@ function App() {
     return localStorage.getItem("darkMode") === "true";
   }); // New state for dark mode
   const [settingsOpen, setSettingsOpen] = useState(false);
+  const [store, setStore] = useState(null);
+  const [lastBackupAt, setLastBackupAt] = useState(null);
 
-  const { mode, apiKey, hasAdmin, needsOnboarding, setMode } = useMode();
-  const isDemo = mode !== MODES.ADMIN;
+  const { mode, apiKey, needsOnboarding, setMode } = useMode();
+  const isClientMode = mode !== MODES.ADMIN;
+  const isDemoMode = mode === MODES.DEMO;
+  const isLocalMode = mode === MODES.LOCAL;
 
   const handleJobAdded = (newJob) => {
     setJobs((prev) => [...prev, newJob]);
   };
 
-  const handleDemoAdd = (job) => {
-    setJobs((prev) => {
-      const next = [...prev, job];
-      saveDemoJobs(next);
-      return next;
-    });
+  const handleDemoAdd = async (job) => {
+    if (!store) return;
+    try {
+      await store.createJob(job);
+    } catch (error) {
+      console.error("Failed to create job in current mode:", error);
+    }
   };
 
-  const handleDemoUpdate = (id, patch) => {
-    setJobs((prev) => {
-      const next = prev.map((job) =>
-        job.id === id
-          ? {
-              ...job,
-              ...patch,
-            }
-          : job
-      );
-      saveDemoJobs(next);
-      return next;
-    });
+  const handleDemoUpdate = async (id, patch) => {
+    if (!store) return;
+    try {
+      await store.updateJob(id, patch);
+    } catch (error) {
+      console.error("Failed to update job in current mode:", error);
+    }
   };
 
-  const handleDemoDelete = (id) => {
-    setJobs((prev) => {
-      const next = prev.filter((job) => job.id !== id);
-      saveDemoJobs(next);
-      return next;
-    });
+  const handleDemoDelete = async (id) => {
+    if (!store) return;
+    try {
+      await store.deleteJob(id);
+    } catch (error) {
+      console.error("Failed to delete job in current mode:", error);
+    }
   };
 
-  const handleResetDemo = () => {
-    const seedJobs = createAlignedDemoSeed();
-    resetDemoJobs();
-    saveDemoJobs(seedJobs);
-    setJobs(seedJobs);
+  const handleResetDemo = async () => {
+    if (!store) return;
+    try {
+      await store.reset();
+    } catch (error) {
+      console.error("Failed to reset demo data:", error);
+    }
   };
 
   const downloadFile = (filename, content, type) => {
@@ -236,21 +202,28 @@ function App() {
     URL.revokeObjectURL(url);
   };
 
-  const handleExportJson = () => {
+  const handleExportJson = useCallback(async () => {
+    if (!store) return;
     if (mode === MODES.ADMIN) {
       console.warn("Export JSON is disabled in admin mode.");
       return;
     }
-    const bundle = {
-      version: DATA_EXPORT_VERSION,
-      jobs,
-    };
-    downloadFile(
-      `joblog-backup-${new Date().toISOString().slice(0, 10)}.json`,
-      JSON.stringify(bundle, null, 2),
-      "application/json"
-    );
-  };
+    try {
+      const bundle = await store.exportData();
+      downloadFile(
+        `joblog-backup-${new Date().toISOString().slice(0, 10)}.json`,
+        JSON.stringify(bundle, null, 2),
+        "application/json"
+      );
+      if (mode === MODES.LOCAL) {
+        const timestamp = new Date().toISOString();
+        await store.setMeta?.("lastBackupAt", timestamp);
+        setLastBackupAt(timestamp);
+      }
+    } catch (error) {
+      console.error("Failed to export JSON:", error);
+    }
+  }, [mode, store]);
 
   const handleExportCsv = () => {
     const headers = [
@@ -283,6 +256,9 @@ function App() {
   };
 
   const handleImportJson = async (text) => {
+    if (!store) {
+      throw new Error("Storage is not ready yet. Try again in a moment.");
+    }
     if (mode === MODES.ADMIN) {
       throw new Error("Import is not available in admin mode.");
     }
@@ -293,12 +269,11 @@ function App() {
       throw new Error("Invalid JSON: unable to parse file.");
     }
     const bundle = exportBundleSchema.parse(parsed);
-    setJobs(bundle.jobs);
-    saveDemoJobs(bundle.jobs);
+    await store.importData(bundle);
   };
 
-  const handleClearData = () => {
-    if (mode === MODES.ADMIN) return;
+  const handleClearData = async () => {
+    if (!store || mode === MODES.ADMIN) return;
     if (
       !window.confirm(
         "This will remove all entries in the current mode. Continue?"
@@ -306,33 +281,104 @@ function App() {
     ) {
       return;
     }
-    if (mode === MODES.DEMO) {
-      handleResetDemo();
-    } else {
-      setJobs([]);
-      saveDemoJobs([]);
+    try {
+      if (mode === MODES.DEMO) {
+        await store.reset();
+      } else {
+        await store.clear();
+        await store.setMeta?.("lastBackupAt", null);
+        setLastBackupAt(null);
+      }
+    } catch (error) {
+      console.error("Failed to clear data:", error);
     }
   };
 
+  const backupReminder = useMemo(() => {
+    if (mode !== MODES.LOCAL) return null;
+    if (!lastBackupAt) {
+      return {
+        title: "Create your first backup",
+        message:
+          "Export a JSON backup to keep a copy of your job history outside this browser.",
+        actionLabel: "Export JSON now",
+        onAction: handleExportJson,
+      };
+    }
+    const lastBackupDate = new Date(lastBackupAt);
+    if (Number.isNaN(lastBackupDate.getTime())) return null;
+    const diffDays = Math.floor(
+      (Date.now() - lastBackupDate.getTime()) / MS_PER_DAY
+    );
+    if (diffDays <= 30) return null;
+    return {
+      title: "Backup reminder",
+      message: `Last backup was ${diffDays} days ago. Export a fresh copy to stay protected.`,
+      actionLabel: "Export JSON",
+      onAction: handleExportJson,
+    };
+  }, [handleExportJson, lastBackupAt, mode]);
+
   useEffect(() => {
-    if (hasAdmin) {
-      setLoading(true);
-      axios
-        .get(
-          `${import.meta.env.VITE_API_BASE_URL}/jobs?key=${encodeURIComponent(
-            apiKey
-          )}`
-        )
-        .then((response) => setJobs(response.data))
-        .catch((error) => console.error("Error fetching jobs:", error))
-        .finally(() => setLoading(false));
+    const seedJobs = mode === MODES.DEMO ? createAlignedDemoSeed() : undefined;
+    const newStore = createStoreForMode({
+      mode,
+      apiKey,
+      seedJobs,
+    });
+    setStore(newStore);
+  }, [mode, apiKey]);
+
+  useEffect(() => {
+    if (!store) return;
+    let cancelled = false;
+    setLoading(true);
+    store
+      .load()
+      .then((initialJobs) => {
+        if (!cancelled) {
+          setJobs(initialJobs);
+        }
+      })
+      .catch((error) =>
+        console.error("Error loading jobs for current mode:", error)
+      )
+      .finally(() => {
+        if (!cancelled) {
+          setLoading(false);
+        }
+      });
+    const unsubscribe = store.subscribe((nextJobs) => {
+      if (!cancelled) {
+        setJobs(nextJobs);
+      }
+    });
+    return () => {
+      cancelled = true;
+      unsubscribe?.();
+    };
+  }, [store]);
+
+  useEffect(() => {
+    if (!store || mode !== MODES.LOCAL) {
+      setLastBackupAt(null);
       return;
     }
-
-    const demoJobs = loadDemoJobs();
-    setJobs(demoJobs);
-    setLoading(false);
-  }, [hasAdmin, apiKey]);
+    let cancelled = false;
+    store
+      .getMeta?.("lastBackupAt")
+      ?.then((value) => {
+        if (!cancelled) {
+          setLastBackupAt(value || null);
+        }
+      })
+      .catch((error) =>
+        console.error("Failed to read backup metadata:", error)
+      );
+    return () => {
+      cancelled = true;
+    };
+  }, [store, mode]);
 
   useEffect(() => {
     if (darkMode) {
@@ -379,12 +425,12 @@ function App() {
         </div>
       </div>
 
-      {isDemo && <DemoBanner onReset={handleResetDemo} />}
+      {isDemoMode && <DemoBanner onReset={handleResetDemo} />}
 
       <JobForm
         onJobAdded={handleJobAdded}
         apiKey={apiKey}
-        demoMode={isDemo}
+        demoMode={isClientMode}
         onDemoAdd={handleDemoAdd}
       />
       <ApplicationTrends jobs={jobs} />
@@ -392,7 +438,7 @@ function App() {
         jobs={jobs}
         setJobs={setJobs}
         apiKey={apiKey}
-        demoMode={isDemo}
+        demoMode={isClientMode}
         onDemoUpdate={handleDemoUpdate}
         onDemoDelete={handleDemoDelete}
       />
@@ -405,6 +451,7 @@ function App() {
         onImportJson={handleImportJson}
         onExportCsv={handleExportCsv}
         onClearData={handleClearData}
+        reminder={backupReminder}
       />
       <OnboardingModal open={needsOnboarding} onSelect={setMode} />
     </div>
