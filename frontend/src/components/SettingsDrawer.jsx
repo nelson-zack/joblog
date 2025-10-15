@@ -18,7 +18,10 @@ const SettingsDrawer = ({
   onExportCsv,
   onClearData,
   reminder,
-  onShowPersonalReminder = () => {}
+  onShowPersonalReminder = () => {},
+  analyticsOptOut = false,
+  onAnalyticsToggle = () => {},
+  doNotTrack = false
 }) => {
   const fileInputRef = useRef(null);
   const [importState, setImportState] = useState({ status: 'idle', message: '' });
@@ -26,6 +29,7 @@ const SettingsDrawer = ({
   const isAdmin = mode === MODES.ADMIN;
   const isDemo = mode === MODES.DEMO;
   const isLocal = mode === MODES.LOCAL;
+  const analyticsDisabled = analyticsOptOut || doNotTrack;
 
   const modeDescription = useMemo(() => {
     if (isAdmin) {
@@ -137,6 +141,33 @@ const SettingsDrawer = ({
             />
           </div>
         )}
+
+        <div className='mt-6 rounded-lg border border-light-accent/30 bg-light-background px-4 py-3 text-sm text-light-text shadow-sm dark:border-dark-accent/40 dark:bg-dark-card dark:text-dark-text'>
+          <div className='flex flex-col gap-3 md:flex-row md:items-center md:justify-between'>
+            <div>
+              <p className='font-semibold'>Anonymous analytics</p>
+              <p className='mt-1 text-xs text-gray-500 dark:text-gray-300'>
+                Helps guide future improvements with anonymous install counts. No job
+                data or personal info is ever sent. <a href='#anonymous-analytics' className='underline'>Learn more</a>.
+              </p>
+              {doNotTrack && (
+                <p className='mt-1 text-xs font-semibold text-amber-600 dark:text-amber-300'>
+                  Your browser's Do Not Track setting is enabled, so analytics are already disabled.
+                </p>
+              )}
+            </div>
+            <label className={`flex items-center gap-2 self-start rounded-full border px-3 py-1 text-xs font-semibold transition ${analyticsDisabled ? 'border-amber-400 text-amber-600 dark:border-amber-300 dark:text-amber-200' : 'border-light-accent text-light-accent dark:border-dark-accent dark:text-dark-accent'}`}>
+              <input
+                type='checkbox'
+                className='h-4 w-4 accent-light-accent dark:accent-dark-accent'
+                checked={analyticsOptOut || doNotTrack}
+                onChange={(e) => onAnalyticsToggle(e.target.checked)}
+                disabled={doNotTrack}
+              />
+              Disable analytics
+            </label>
+          </div>
+        </div>
 
         {reminder ? (
           <div className='mt-4 rounded-lg border border-amber-400/60 bg-amber-50 p-4 text-sm text-amber-700 dark:border-amber-300/60 dark:bg-amber-900/20 dark:text-amber-200'>

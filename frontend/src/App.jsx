@@ -1,4 +1,4 @@
-import React, { useState, useEffect, useMemo, useCallback } from "react";
+import React, { useState, useEffect, useMemo, useCallback, useRef } from "react";
 import JobForm from "./components/JobForm";
 import JobList from "./components/JobList";
 import ApplicationTrends from "./components/ApplicationTrends";
@@ -13,6 +13,53 @@ import { DATA_EXPORT_VERSION, exportBundleSchema } from "./storage/store";
 import mockJobs from "./mock/jobs.sample.json";
 
 const MS_PER_DAY = 24 * 60 * 60 * 1000;
+const INSTALL_ID_KEY = "joblog_install_id_v1";
+const ANALYTICS_OPTOUT_KEY = "joblog_telemetry_optout";
+const APP_VERSION = import.meta.env.VITE_APP_VERSION || "dev";
+const API_BASE_URL = import.meta.env.VITE_API_BASE_URL;
+const ANALYTICS_EVENTS = new Set([
+  "job_create",
+  "job_update",
+  "job_delete",
+  "export_json",
+  "import_json",
+]);
+
+const detectDoNotTrack = () => {
+  const nav = typeof navigator !== "undefined" ? navigator : undefined;
+  const win = typeof window !== "undefined" ? window : undefined;
+  const dnt =
+    nav?.doNotTrack ??
+    win?.doNotTrack ??
+    nav?.msDoNotTrack ??
+    nav?.globalPrivacyControl;
+  return dnt === "1" || dnt === "yes" || dnt === true;
+};
+
+const generateUuid = () => {
+  if (typeof crypto !== "undefined" && crypto.randomUUID) {
+    return crypto.randomUUID();
+  }
+  // Fallback RFC4122 v4-ish generator
+  return "xxxxxxxx-xxxx-4xxx-yxxx-xxxxxxxxxxxx".replace(/[xy]/g, (c) => {
+    const r = (Math.random() * 16) | 0;
+    const v = c === "x" ? r : (r & 0x3) | 0x8;
+    return v.toString(16);
+  });
+};
+
+const getOrCreateInstallId = () => {
+  try {
+    const existing = localStorage.getItem(INSTALL_ID_KEY);
+    if (existing) return existing;
+    const uuid = generateUuid();
+    localStorage.setItem(INSTALL_ID_KEY, uuid);
+    return uuid;
+  } catch (error) {
+    console.warn("Unable to access localStorage for analytics install id:", error);
+    return null;
+  }
+};
 
 const cloneSeedJobs = () => JSON.parse(JSON.stringify(mockJobs));
 
@@ -152,6 +199,91 @@ function App() {
     const stored = localStorage.getItem("joblog_personal_banner_hidden_v1");
     return stored !== "true";
   });
+  const [installId] = useState(() => getOrCreateInstallId());
+  const [analyticsOptOut, setAnalyticsOptOut] = useState(() => {
+    try {
+      return localStorage.getItem(ANALYTICS_OPTOUT_KEY) === "true";
+    } catch (error) {
+      console.warn("Unable to read analytics opt-out flag:", error);
+      return false;
+    }
+  });
+  const doNotTrack = useMemo(() => detectDoNotTrack(), []);
+  const heartbeatSentRef = useRef(false);
+  const previousModeRef = useRef(mode);
+  const effectiveAnalyticsOptOut = analyticsOptOut || doNotTrack;
+  const sendHeartbeat = useCallback(() => {
+    if (!installId || !API_BASE_URL || effectiveAnalyticsOptOut) return;
+    const payload = {
+      id: installId,
+      mode,
+      version: APP_VERSION,
+      ts: Date.now(),
+    };
+    try {
+      const url = `${API_BASE_URL}/analytics/heartbeat`;
+      const data = JSON.stringify(payload);
+      if (navigator.sendBeacon) {
+        const blob = new Blob([data], { type: "application/json" });
+        navigator.sendBeacon(url, blob);
+      } else {
+        fetch(url, {
+          method: "POST",
+          headers: { "Content-Type": "application/json" },
+          body: data,
+          keepalive: true,
+        }).catch((error) => {
+          console.debug("Heartbeat request failed", error);
+        });
+      }
+    } catch (error) {
+      console.debug("Unable to send analytics heartbeat", error);
+    }
+  }, [installId, effectiveAnalyticsOptOut, mode, API_BASE_URL]);
+
+  const sendAnalyticsEvent = useCallback(
+    (eventName) => {
+      if (!ANALYTICS_EVENTS.has(eventName)) return;
+      if (!installId || !API_BASE_URL || effectiveAnalyticsOptOut) return;
+      const payload = {
+        id: installId,
+        event: eventName,
+        ts: Date.now(),
+      };
+      const url = `${API_BASE_URL}/analytics/event`;
+      const data = JSON.stringify(payload);
+      try {
+        if (navigator.sendBeacon) {
+          const blob = new Blob([data], { type: "application/json" });
+          navigator.sendBeacon(url, blob);
+        } else {
+          fetch(url, {
+            method: "POST",
+            headers: { "Content-Type": "application/json" },
+            body: data,
+            keepalive: true,
+          }).catch((error) => {
+            console.debug("Analytics event failed", error);
+          });
+        }
+      } catch (error) {
+        console.debug("Unable to record analytics event", error);
+      }
+    },
+    [installId, effectiveAnalyticsOptOut, API_BASE_URL]
+  );
+
+  const handleAnalyticsToggle = useCallback((disabled) => {
+    try {
+      localStorage.setItem(ANALYTICS_OPTOUT_KEY, disabled ? "true" : "false");
+    } catch (error) {
+      console.warn("Unable to persist analytics opt-out preference:", error);
+    }
+    setAnalyticsOptOut(disabled);
+    if (disabled) {
+      heartbeatSentRef.current = false;
+    }
+  }, []);
 
   const { mode, apiKey, needsOnboarding, setMode } = useMode();
   const isDemoMode = mode === MODES.DEMO;
@@ -160,26 +292,30 @@ function App() {
     async (jobPayload) => {
       if (!store) return null;
       try {
-        return await store.createJob(jobPayload);
+        const created = await store.createJob(jobPayload);
+        sendAnalyticsEvent("job_create");
+        return created;
       } catch (error) {
         console.error("Failed to create job:", error);
         throw error;
       }
     },
-    [store]
+    [store, sendAnalyticsEvent]
   );
 
   const handleUpdateJob = useCallback(
     async (id, patch) => {
       if (!store) return null;
       try {
-        return await store.updateJob(id, patch);
+        const updated = await store.updateJob(id, patch);
+        sendAnalyticsEvent("job_update");
+        return updated;
       } catch (error) {
         console.error("Failed to update job:", error);
         throw error;
       }
     },
-    [store]
+    [store, sendAnalyticsEvent]
   );
 
   const handleDeleteJob = useCallback(
@@ -187,12 +323,13 @@ function App() {
       if (!store) return;
       try {
         await store.deleteJob(id);
+        sendAnalyticsEvent("job_delete");
       } catch (error) {
         console.error("Failed to delete job:", error);
         throw error;
       }
     },
-    [store]
+    [store, sendAnalyticsEvent]
   );
 
   const handleResetDemo = async () => {
@@ -229,6 +366,7 @@ function App() {
         JSON.stringify(bundle, null, 2),
         "application/json"
       );
+      sendAnalyticsEvent("export_json");
       if (mode === MODES.LOCAL) {
         const timestamp = new Date().toISOString();
         await store.setMeta?.("lastBackupAt", timestamp);
@@ -237,7 +375,7 @@ function App() {
     } catch (error) {
       console.error("Failed to export JSON:", error);
     }
-  }, [mode, store]);
+  }, [mode, store, sendAnalyticsEvent]);
 
   const handleExportCsv = () => {
     const headers = [
@@ -284,6 +422,7 @@ function App() {
     }
     const bundle = exportBundleSchema.parse(parsed);
     await store.importData(bundle);
+    sendAnalyticsEvent("import_json");
   };
 
   const handleClearData = async () => {
@@ -372,6 +511,28 @@ function App() {
       unsubscribe?.();
     };
   }, [store]);
+
+  useEffect(() => {
+    if (!installId || !API_BASE_URL) return;
+    if (effectiveAnalyticsOptOut) {
+      heartbeatSentRef.current = false;
+      return;
+    }
+    if (heartbeatSentRef.current) return;
+    sendHeartbeat();
+    heartbeatSentRef.current = true;
+  }, [installId, effectiveAnalyticsOptOut, sendHeartbeat]);
+
+  useEffect(() => {
+    if (previousModeRef.current !== mode) {
+      previousModeRef.current = mode;
+      heartbeatSentRef.current = false;
+      if (!effectiveAnalyticsOptOut) {
+        sendHeartbeat();
+        heartbeatSentRef.current = true;
+      }
+    }
+  }, [mode, effectiveAnalyticsOptOut, sendHeartbeat]);
 
   useEffect(() => {
     if (!store || mode !== MODES.LOCAL) {
@@ -484,6 +645,9 @@ function App() {
           setShowPersonalBanner(true);
           localStorage.removeItem("joblog_personal_banner_hidden_v1");
         }}
+        analyticsOptOut={analyticsOptOut}
+        doNotTrack={doNotTrack}
+        onAnalyticsToggle={handleAnalyticsToggle}
       />
       <OnboardingModal open={needsOnboarding} onSelect={setMode} />
     </div>
