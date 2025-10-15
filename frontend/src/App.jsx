@@ -420,7 +420,7 @@ function App() {
           <div className="flex items-center gap-2">
             <button
               onClick={() => setSettingsOpen(true)}
-              className={`text-sm border px-3 py-1 rounded transition focus:outline-none focus:ring-2 focus:ring-light-accent dark:focus:ring-dark-accent ${
+              className={`text-sm border px-3 py-1 rounded transition focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-light-accent dark:focus-visible:ring-dark-accent ${
                 darkMode
                   ? "border-dark-accent text-dark-accent hover:bg-dark-card hover:text-white dark:hover:border-dark-accent dark:hover:shadow-[0_0_14px_#22d3ee]"
                   : "border-light-accent text-light-accent hover:bg-light-accent hover:text-white"
@@ -430,7 +430,7 @@ function App() {
             </button>
             <button
               onClick={() => setDarkMode(!darkMode)}
-              className={`text-sm border px-3 py-1 rounded transition focus:outline-none focus:ring-2 focus:ring-light-accent dark:focus:ring-dark-accent ${
+              className={`text-sm border px-3 py-1 rounded transition focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-light-accent dark:focus-visible:ring-dark-accent ${
                 darkMode
                   ? "border-dark-accent text-dark-accent hover:text-white hover:bg-dark-card dark:hover:border-dark-accent dark:hover:shadow-[0_0_14px_#22d3ee]"
                   : "border-light-accent text-light-accent hover:bg-light-accent hover:text-white"
