@@ -1,9 +1,10 @@
-from fastapi import FastAPI, Depends, HTTPException, Request
+from fastapi import FastAPI, Depends, HTTPException, Request, Response
 from fastapi.middleware.cors import CORSMiddleware
 from sqlalchemy.orm import Session
+from sqlalchemy import func
 import os
 import re
-from datetime import date
+from datetime import date, datetime, timedelta
 
 from database import Base, engine, SessionLocal
 import models
@@ -165,3 +166,86 @@ def update_job(job_id: int, updated_job: schemas.JobCreate, db: Session = Depend
     db.commit()
     db.refresh(job)
     return job
+
+
+# === Analytics ===
+ALLOWED_ANALYTICS_EVENTS = {
+    "job_create",
+    "job_update",
+    "job_delete",
+    "export_json",
+    "import_json",
+}
+
+
+def _ts_to_datetime(ts: int) -> datetime:
+    # Accept milliseconds or seconds epoch
+    value = ts / 1000 if ts > 10**11 else ts
+    return datetime.utcfromtimestamp(value)
+
+
+@app.post("/analytics/heartbeat", status_code=204)
+def analytics_heartbeat(payload: schemas.AnalyticsHeartbeat, db: Session = Depends(get_db)):
+    seen_at = _ts_to_datetime(payload.ts)
+    install_id = str(payload.id)
+
+    install = db.query(models.AnalyticsInstall).get(install_id)
+    if install is None:
+        install = models.AnalyticsInstall(
+            id=install_id,
+            first_seen=seen_at,
+            last_seen=seen_at,
+            launch_count=1,
+            mode=payload.mode,
+            version=payload.version,
+        )
+        db.add(install)
+    else:
+        install.last_seen = seen_at
+        install.launch_count = (install.launch_count or 0) + 1
+        install.mode = payload.mode
+        install.version = payload.version
+
+    db.commit()
+    return Response(status_code=204)
+
+
+@app.post("/analytics/event", status_code=204)
+def analytics_event(payload: schemas.AnalyticsEventIn, db: Session = Depends(get_db)):
+    if payload.event not in ALLOWED_ANALYTICS_EVENTS:
+        raise HTTPException(status_code=400, detail="Unsupported event type")
+
+    event_ts = _ts_to_datetime(payload.ts)
+    event = models.AnalyticsEvent(
+        install_id=str(payload.id),
+        event=payload.event,
+        ts=event_ts,
+    )
+    db.add(event)
+    db.commit()
+    return Response(status_code=204)
+
+
+@app.get("/admin/stats", response_model=schemas.AdminStats, dependencies=[Depends(verify_api_key)])
+def admin_stats(db: Session = Depends(get_db)):
+    now = datetime.utcnow()
+    seven_days_ago = now - timedelta(days=7)
+    thirty_days_ago = now - timedelta(days=30)
+
+    unique_installs = db.query(models.AnalyticsInstall).count()
+    active_7d = db.query(models.AnalyticsInstall).filter(models.AnalyticsInstall.last_seen >= seven_days_ago).count()
+    active_30d = db.query(models.AnalyticsInstall).filter(models.AnalyticsInstall.last_seen >= thirty_days_ago).count()
+    total_launches = db.query(func.coalesce(func.sum(models.AnalyticsInstall.launch_count), 0)).scalar() or 0
+    total_events = db.query(func.count(models.AnalyticsEvent.id)).scalar() or 0
+    jobs_created = db.query(models.AnalyticsEvent).filter(models.AnalyticsEvent.event == "job_create").count()
+    users_exported = db.query(models.AnalyticsEvent).filter(models.AnalyticsEvent.event == "export_json").count()
+
+    return schemas.AdminStats(
+        unique_installs=unique_installs,
+        active_7d=active_7d,
+        active_30d=active_30d,
+        total_launches=int(total_launches),
+        total_events=total_events,
+        jobs_created=jobs_created,
+        users_exported=users_exported,
+    )

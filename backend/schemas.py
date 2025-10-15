@@ -1,6 +1,7 @@
 from pydantic import BaseModel
-from typing import Optional
-from typing import List
+from typing import Optional, List, Literal
+from uuid import UUID
+
 
 class StatusEntry(BaseModel):
     status: str
@@ -23,4 +24,26 @@ class JobOut(JobCreate):
 
     class Config:
         from_attributes = True
-        
+
+
+class AnalyticsHeartbeat(BaseModel):
+    id: UUID
+    mode: Literal["demo", "local", "admin"]
+    version: str
+    ts: int
+
+
+class AnalyticsEventIn(BaseModel):
+    id: UUID
+    event: Literal["job_create", "job_update", "job_delete", "export_json", "import_json"]
+    ts: int
+
+
+class AdminStats(BaseModel):
+    unique_installs: int
+    active_7d: int
+    active_30d: int
+    total_launches: int
+    total_events: int
+    jobs_created: int
+    users_exported: int
