@@ -480,6 +480,10 @@ function App() {
         onExportCsv={handleExportCsv}
         onClearData={handleClearData}
         reminder={backupReminder}
+        onShowPersonalReminder={() => {
+          setShowPersonalBanner(true);
+          localStorage.removeItem("joblog_personal_banner_hidden_v1");
+        }}
       />
       <OnboardingModal open={needsOnboarding} onSelect={setMode} />
     </div>

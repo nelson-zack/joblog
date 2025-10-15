@@ -17,7 +17,8 @@ const SettingsDrawer = ({
   onImportJson,
   onExportCsv,
   onClearData,
-  reminder
+  reminder,
+  onShowPersonalReminder = () => {}
 }) => {
   const fileInputRef = useRef(null);
   const [importState, setImportState] = useState({ status: 'idle', message: '' });
@@ -239,6 +240,15 @@ const SettingsDrawer = ({
             clearing browser data, using private windows, or switching devices
             will remove local entries unless you restore from a backup.
           </p>
+        )}
+        {isLocal && (
+          <button
+            type='button'
+            onClick={onShowPersonalReminder}
+            className='mt-2 inline-flex items-center text-xs font-semibold text-light-accent transition hover:text-white hover:bg-light-accent dark:text-dark-accent dark:hover:text-white dark:hover:bg-dark-accent rounded px-2 py-1'
+          >
+            Show reminder banner again
+          </button>
         )}
       </div>
     </div>
