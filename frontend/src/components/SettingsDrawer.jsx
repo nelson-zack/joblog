@@ -3,7 +3,7 @@ import ModeBadge from './ModeBadge';
 import { MODES } from '../storage/selectStore';
 
 const actionButton =
-  'w-full rounded-lg border border-light-accent/40 bg-light-background px-4 py-3 text-left text-sm font-medium text-light-text shadow-sm transition hover:border-light-accent hover:shadow-md focus:outline-none focus:ring-2 focus:ring-light-accent dark:border-dark-accent/40 dark:bg-dark-card dark:text-dark-text dark:hover:border-dark-accent';
+  'w-full rounded-lg border border-light-accent/40 bg-light-background px-4 py-3 text-left text-sm font-medium text-light-text shadow-sm transition hover:border-light-accent hover:shadow-md focus:outline-none focus:ring-2 focus:ring-light-accent dark:border-dark-accent/40 dark:bg-dark-card dark:text-dark-text dark:hover:border-dark-accent dark:focus:ring-dark-accent';
 
 const disabledButton =
   'opacity-50 cursor-not-allowed hover:shadow-none hover:border-light-accent/40 dark:hover:border-dark-accent/40';
@@ -45,7 +45,7 @@ const SettingsDrawer = ({
         onClick={() => onSelectMode?.(target)}
         className={`${actionButton} ${
           active
-            ? 'border-light-accent bg-light-accent/10 dark:border-dark-accent dark:bg-dark-accent/10'
+            ? 'border-light-accent bg-light-accent/10 dark:border-dark-accent dark:bg-dark-accent/20'
             : ''
         } ${isAdmin ? disabledButton : ''}`}
       >
@@ -168,7 +168,7 @@ const SettingsDrawer = ({
             onClick={triggerImport}
             className={`${actionButton} ${
               isAdmin ? disabledButton : ''
-            } flex flex-col`}
+            }`}
             disabled={isAdmin}
           >
             Import JSON backup
@@ -211,7 +211,9 @@ const SettingsDrawer = ({
             type='button'
             onClick={onClearData}
             className={`${actionButton} ${
-              isAdmin ? disabledButton : 'border-red-400/50 hover:border-red-400'
+              isAdmin
+                ? disabledButton
+                : 'border-red-400/50 hover:border-red-400 dark:border-red-300/50 dark:hover:border-red-300'
             }`}
             disabled={isAdmin}
           >

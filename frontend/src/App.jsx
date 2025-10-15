@@ -417,7 +417,7 @@ function App() {
           <div className="flex items-center gap-2">
             <button
               onClick={() => setSettingsOpen(true)}
-              className="text-sm border px-3 py-1 rounded border-light-accent text-light-accent transition hover:bg-light-accent hover:text-white focus:outline-none focus:ring-2 focus:ring-light-accent dark:border-dark-accent dark:text-dark-accent dark:hover:bg-dark-card dark:hover:text-white"
+              className="text-sm border px-3 py-1 rounded border-light-accent text-light-accent transition hover:bg-light-accent hover:text-white focus:outline-none focus:ring-2 focus:ring-light-accent dark:border-dark-accent dark:text-dark-accent dark:hover:border-dark-accent dark:hover:bg-dark-card dark:hover:text-white dark:focus:ring-dark-accent"
             >
               Settings
             </button>
