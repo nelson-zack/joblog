@@ -63,6 +63,23 @@ An onboarding modal guides first-time visitors without keys. You can revisit the
 - Personal mode offers a backup reminder if you haven’t exported in 30+ days. Use **Settings → Export JSON** to capture versioned backups or **Import JSON** to restore, and you can re-show the reminder anytime from Settings.
 - CSV export is available in Settings for quick sharing, but remember that personal mode has no cross-device sync yet—you’ll need to import your JSON backup on another device manually.
 
+## Anonymous Analytics
+
+To understand how JobLog is used (and only when analytics aren’t disabled or blocked by your browser), the app sends a single anonymous “heartbeat” on launch and optional aggregate events. Each browser install gets a random UUID that never leaves the device except as that anonymous identifier.
+
+We collect:
+
+- Install UUID, first/last seen timestamps, current mode (`demo|local|admin`), app version, and a launch counter.
+- Optional aggregate events: `job_create`, `job_update`, `job_delete`, `export_json`, `import_json`.
+
+We **do not** collect job content, company names, personal data, IP addresses, or user-agent strings. Data is never shared outside the JobLog project, and only admin sessions (`?key=...`) can view the aggregate dashboard.
+
+### Opting out
+
+- Analytics are disabled automatically if your browser’s **Do Not Track** / Global Privacy Control setting is enabled.
+- You can toggle telemetry off at any time under **Settings → Disable anonymous analytics**. The toggle persists locally and stops all future heartbeats/events.
+- Want to see the disclosure again? Use the same settings panel to re-show the personal-mode reminder banner.
+
 ## Tech Stack
 
 - **Frontend:** React + Tailwind CSS (Vite)

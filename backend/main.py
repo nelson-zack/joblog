@@ -1,9 +1,10 @@
-from fastapi import FastAPI, Depends, HTTPException, Request
+from fastapi import FastAPI, Depends, HTTPException, Request, Response
 from fastapi.middleware.cors import CORSMiddleware
 from sqlalchemy.orm import Session
+from sqlalchemy import func
 import os
 import re
-from datetime import date
+from datetime import date, datetime, timedelta
 
 from database import Base, engine, SessionLocal
 import models
@@ -165,3 +166,184 @@ def update_job(job_id: int, updated_job: schemas.JobCreate, db: Session = Depend
     db.commit()
     db.refresh(job)
     return job
+
+
+# === Analytics ===
+ALLOWED_ANALYTICS_EVENTS = {
+    "job_create",
+    "job_update",
+    "job_delete",
+    "export_json",
+    "import_json",
+}
+
+
+def _ts_to_datetime(ts: int) -> datetime:
+    # Accept milliseconds or seconds epoch
+    value = ts / 1000 if ts > 10**11 else ts
+    return datetime.utcfromtimestamp(value)
+
+
+@app.post("/analytics/heartbeat", status_code=204)
+def analytics_heartbeat(payload: schemas.AnalyticsHeartbeat, db: Session = Depends(get_db)):
+    seen_at = _ts_to_datetime(payload.ts)
+    install_id = str(payload.id)
+
+    install = db.query(models.AnalyticsInstall).get(install_id)
+    if install is None:
+        install = models.AnalyticsInstall(
+            id=install_id,
+            first_seen=seen_at,
+            last_seen=seen_at,
+            launch_count=1,
+            mode=payload.mode,
+            version=payload.version,
+        )
+        db.add(install)
+    else:
+        install.last_seen = seen_at
+        install.launch_count = (install.launch_count or 0) + 1
+        install.mode = payload.mode
+        install.version = payload.version
+
+    launch_event = models.AnalyticsEvent(
+        install_id=install_id,
+        event=f"launch_{payload.mode}",
+        ts=seen_at,
+    )
+    db.add(launch_event)
+    db.commit()
+    return Response(status_code=204)
+
+
+@app.post("/analytics/event", status_code=204)
+def analytics_event(payload: schemas.AnalyticsEventIn, db: Session = Depends(get_db)):
+    event_name = payload.event
+    base_event = event_name
+    if event_name not in ALLOWED_ANALYTICS_EVENTS:
+        base_part, sep, suffix = event_name.rpartition("_")
+        if sep and suffix in {"demo", "local", "admin"} and base_part in ALLOWED_ANALYTICS_EVENTS:
+            base_event = base_part
+        else:
+            raise HTTPException(status_code=400, detail="Unsupported event type")
+
+    event_ts = _ts_to_datetime(payload.ts)
+    event = models.AnalyticsEvent(
+        install_id=str(payload.id),
+        event=payload.event,
+        ts=event_ts,
+    )
+    db.add(event)
+    db.commit()
+    return Response(status_code=204)
+
+
+@app.get("/admin/stats", response_model=schemas.AdminStats, dependencies=[Depends(verify_api_key)])
+def admin_stats(db: Session = Depends(get_db)):
+    now = datetime.utcnow()
+    seven_days_ago = now - timedelta(days=7)
+    thirty_days_ago = now - timedelta(days=30)
+
+    unique_installs = db.query(models.AnalyticsInstall).count()
+    active_7d = db.query(models.AnalyticsInstall).filter(models.AnalyticsInstall.last_seen >= seven_days_ago).count()
+    active_30d = db.query(models.AnalyticsInstall).filter(models.AnalyticsInstall.last_seen >= thirty_days_ago).count()
+    total_launches = db.query(func.coalesce(func.sum(models.AnalyticsInstall.launch_count), 0)).scalar() or 0
+    launch_event_names = {f"launch_{m}" for m in ("demo", "local", "admin")}
+
+    by_mode = {mode: schemas.ModeBucket() for mode in ("demo", "local", "admin")}
+    launch_events = (
+        db.query(models.AnalyticsEvent.event, func.count(models.AnalyticsEvent.id))
+        .filter(models.AnalyticsEvent.event.in_(launch_event_names))
+        .group_by(models.AnalyticsEvent.event)
+        .all()
+    )
+    for event_name, count in launch_events:
+        _, mode_key = event_name.split("_", 1)
+        if mode_key in by_mode:
+            by_mode[mode_key].launches = count
+
+    launch_installs = (
+        db.query(models.AnalyticsEvent.event, func.count(func.distinct(models.AnalyticsEvent.install_id)))
+        .filter(models.AnalyticsEvent.event.in_(launch_event_names))
+        .group_by(models.AnalyticsEvent.event)
+        .all()
+    )
+    for event_name, count in launch_installs:
+        _, mode_key = event_name.split("_", 1)
+        if mode_key in by_mode:
+            by_mode[mode_key].installs = count
+
+    launch_active7 = (
+        db.query(models.AnalyticsEvent.event, func.count(func.distinct(models.AnalyticsEvent.install_id)))
+        .filter(models.AnalyticsEvent.event.in_(launch_event_names))
+        .filter(models.AnalyticsEvent.ts >= seven_days_ago)
+        .group_by(models.AnalyticsEvent.event)
+        .all()
+    )
+    for event_name, count in launch_active7:
+        _, mode_key = event_name.split("_", 1)
+        if mode_key in by_mode:
+            by_mode[mode_key].active_7d = count
+
+    launch_active30 = (
+        db.query(models.AnalyticsEvent.event, func.count(func.distinct(models.AnalyticsEvent.install_id)))
+        .filter(models.AnalyticsEvent.event.in_(launch_event_names))
+        .filter(models.AnalyticsEvent.ts >= thirty_days_ago)
+        .group_by(models.AnalyticsEvent.event)
+        .all()
+    )
+    for event_name, count in launch_active30:
+        _, mode_key = event_name.split("_", 1)
+        if mode_key in by_mode:
+            by_mode[mode_key].active_30d = count
+
+    install_modes = {
+        install_id: mode_value
+        for install_id, mode_value in db.query(models.AnalyticsInstall.id, models.AnalyticsInstall.mode)
+    }
+
+    total_events = 0
+    jobs_created = 0
+    users_exported = 0
+
+    event_rows = (
+        db.query(models.AnalyticsEvent.event, models.AnalyticsEvent.install_id)
+        .filter(~models.AnalyticsEvent.event.in_(launch_event_names))
+        .all()
+    )
+
+    for event_name, install_id in event_rows:
+        base_event = event_name
+        mode_for_event = None
+
+        if event_name in ALLOWED_ANALYTICS_EVENTS:
+            mode_for_event = install_modes.get(install_id)
+        else:
+            base_part, sep, suffix = event_name.rpartition("_")
+            if sep and base_part in ALLOWED_ANALYTICS_EVENTS and suffix in by_mode:
+                base_event = base_part
+                mode_for_event = suffix
+
+        total_events += 1
+        if base_event == "job_create":
+            jobs_created += 1
+        elif base_event == "export_json":
+            users_exported += 1
+
+        if mode_for_event in by_mode:
+            by_mode[mode_for_event].events_total += 1
+            if base_event == "job_create":
+                by_mode[mode_for_event].jobs_created += 1
+            elif base_event == "export_json":
+                by_mode[mode_for_event].users_exported += 1
+
+    return schemas.AdminStats(
+        unique_installs=unique_installs,
+        active_7d=active_7d,
+        active_30d=active_30d,
+        total_launches=int(total_launches),
+        total_events=total_events,
+        jobs_created=jobs_created,
+        users_exported=users_exported,
+        by_mode=by_mode,
+    )
