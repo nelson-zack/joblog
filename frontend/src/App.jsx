@@ -219,6 +219,12 @@ function App() {
   const effectiveAnalyticsOptOut = analyticsOptOut || doNotTrack;
 
   const sendHeartbeat = useCallback(() => {
+    const context = {
+      mode,
+      effectiveAnalyticsOptOut,
+      apiBaseUrlAvailable: Boolean(API_BASE_URL),
+    };
+    console.debug("analytics: attempting heartbeat", context);
     if (!installId || !API_BASE_URL || effectiveAnalyticsOptOut) return;
     const payload = {
       id: installId,
