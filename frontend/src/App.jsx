@@ -210,9 +210,14 @@ function App() {
     }
   });
   const doNotTrack = useMemo(() => detectDoNotTrack(), []);
+
+  const { mode, apiKey, needsOnboarding, setMode } = useMode();
+  const isDemoMode = mode === MODES.DEMO;
+
   const heartbeatSentRef = useRef(false);
   const previousModeRef = useRef(mode);
   const effectiveAnalyticsOptOut = analyticsOptOut || doNotTrack;
+
   const sendHeartbeat = useCallback(() => {
     if (!installId || !API_BASE_URL || effectiveAnalyticsOptOut) return;
     const payload = {
@@ -240,7 +245,7 @@ function App() {
     } catch (error) {
       console.debug("Unable to send analytics heartbeat", error);
     }
-  }, [installId, effectiveAnalyticsOptOut, mode, API_BASE_URL]);
+  }, [installId, API_BASE_URL, effectiveAnalyticsOptOut, mode]);
 
   const sendAnalyticsEvent = useCallback(
     (eventName) => {
@@ -271,7 +276,7 @@ function App() {
         console.debug("Unable to record analytics event", error);
       }
     },
-    [installId, effectiveAnalyticsOptOut, API_BASE_URL]
+    [installId, API_BASE_URL, effectiveAnalyticsOptOut]
   );
 
   const handleAnalyticsToggle = useCallback((disabled) => {
@@ -285,9 +290,6 @@ function App() {
       heartbeatSentRef.current = false;
     }
   }, []);
-
-  const { mode, apiKey, needsOnboarding, setMode } = useMode();
-  const isDemoMode = mode === MODES.DEMO;
 
   const handleCreateJob = useCallback(
     async (jobPayload) => {
@@ -610,7 +612,9 @@ function App() {
       </div>
 
       {isDemoMode && <DemoBanner onReset={handleResetDemo} />}
+
       {mode === MODES.ADMIN && apiKey && <AdminStats apiKey={apiKey} />}
+
       {mode === MODES.LOCAL && showPersonalBanner && (
         <PersonalBanner
           onDismiss={() => {
@@ -619,15 +623,6 @@ function App() {
           }}
         />
       )}
-
-      <JobForm onCreateJob={handleCreateJob} mode={mode} />
-      <ApplicationTrends jobs={jobs} />
-      <JobList
-        jobs={jobs}
-        mode={mode}
-        onUpdateJob={handleUpdateJob}
-        onDeleteJob={handleDeleteJob}
-      />
 
       <SettingsDrawer
         open={settingsOpen}
@@ -650,6 +645,15 @@ function App() {
         analyticsOptOut={analyticsOptOut}
         doNotTrack={doNotTrack}
         onAnalyticsToggle={handleAnalyticsToggle}
+      />
+
+      <JobForm onCreateJob={handleCreateJob} mode={mode} />
+      <ApplicationTrends jobs={jobs} />
+      <JobList
+        jobs={jobs}
+        mode={mode}
+        onUpdateJob={handleUpdateJob}
+        onDeleteJob={handleDeleteJob}
       />
       <OnboardingModal open={needsOnboarding} onSelect={setMode} />
     </div>
