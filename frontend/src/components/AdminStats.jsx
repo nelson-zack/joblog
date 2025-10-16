@@ -46,6 +46,13 @@ const AdminStats = ({ apiKey }) => {
 
   if (!apiKey || !API_BASE_URL) return null;
 
+  const modeBuckets = stats?.by_mode;
+  const modeOrder = [
+    { key: 'local', label: 'Personal (Local)' },
+    { key: 'demo', label: 'Public Demo' },
+    { key: 'admin', label: 'Admin' }
+  ];
+
   return (
     <div className='mb-6 rounded-lg border border-light-accent/30 bg-light-background p-4 text-sm text-light-text shadow-sm dark:border-dark-accent/40 dark:bg-dark-card dark:text-dark-text'>
       <div className='mb-4 flex items-center justify-between'>
@@ -74,6 +81,49 @@ const AdminStats = ({ apiKey }) => {
           </div>
         ))}
       </div>
+
+      {modeBuckets && (
+        <div className='mt-8'>
+          <h3 className='mb-3 text-sm font-semibold uppercase tracking-wide text-gray-500 dark:text-gray-300'>
+            By Mode
+          </h3>
+          <div className='grid gap-4 md:grid-cols-3'>
+            {modeOrder.map(({ key, label }) => {
+              const bucket = modeBuckets?.[key] || {};
+              const cells = [
+                { label: 'Installs', value: bucket.installs },
+                { label: 'Active 7d', value: bucket.active_7d },
+                { label: 'Active 30d', value: bucket.active_30d },
+                { label: 'Launches', value: bucket.launches },
+                { label: 'Events', value: bucket.events_total },
+                { label: 'Jobs created', value: bucket.jobs_created },
+                { label: 'Users exported', value: bucket.users_exported }
+              ];
+
+              return (
+                <div
+                  key={key}
+                  className='flex flex-col gap-2 rounded-lg border border-light-accent/20 bg-white/80 p-3 text-left shadow-sm dark:border-dark-accent/25 dark:bg-dark-background'
+                >
+                  <div className='text-sm font-semibold text-light-accent dark:text-dark-accent'>
+                    {label}
+                  </div>
+                  <div className='grid gap-1 text-xs text-gray-600 dark:text-gray-300'>
+                    {cells.map(({ label: cellLabel, value }) => (
+                      <div key={cellLabel} className='flex items-center justify-between'>
+                        <span>{cellLabel}</span>
+                        <span className='font-semibold text-light-text dark:text-dark-text'>
+                          {value?.toLocaleString?.() ?? value ?? 0}
+                        </span>
+                      </div>
+                    ))}
+                  </div>
+                </div>
+              );
+            })}
+          </div>
+        </div>
+      )}
     </div>
   );
 };
