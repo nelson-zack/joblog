@@ -1,5 +1,5 @@
 from pydantic import BaseModel
-from typing import Optional, List, Literal
+from typing import Optional, List, Literal, Dict
 from uuid import UUID
 
 
@@ -39,6 +39,16 @@ class AnalyticsEventIn(BaseModel):
     ts: int
 
 
+class ModeBucket(BaseModel):
+    installs: int = 0
+    active_7d: int = 0
+    active_30d: int = 0
+    launches: int = 0
+    events_total: int = 0
+    jobs_created: int = 0
+    users_exported: int = 0
+
+
 class AdminStats(BaseModel):
     unique_installs: int
     active_7d: int
@@ -47,3 +57,4 @@ class AdminStats(BaseModel):
     total_events: int
     jobs_created: int
     users_exported: int
+    by_mode: Dict[Literal["demo", "local", "admin"], ModeBucket]

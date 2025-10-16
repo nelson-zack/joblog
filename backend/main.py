@@ -240,6 +240,87 @@ def admin_stats(db: Session = Depends(get_db)):
     jobs_created = db.query(models.AnalyticsEvent).filter(models.AnalyticsEvent.event == "job_create").count()
     users_exported = db.query(models.AnalyticsEvent).filter(models.AnalyticsEvent.event == "export_json").count()
 
+    by_mode = {mode: schemas.ModeBucket() for mode in ("demo", "local", "admin")}
+
+    install_counts = (
+        db.query(models.AnalyticsInstall.mode, func.count(models.AnalyticsInstall.id))
+        .group_by(models.AnalyticsInstall.mode)
+        .all()
+    )
+    for mode, count in install_counts:
+        if mode in by_mode:
+            by_mode[mode].installs = count
+
+    active7_counts = (
+        db.query(models.AnalyticsInstall.mode, func.count(models.AnalyticsInstall.id))
+        .filter(models.AnalyticsInstall.last_seen >= seven_days_ago)
+        .group_by(models.AnalyticsInstall.mode)
+        .all()
+    )
+    for mode, count in active7_counts:
+        if mode in by_mode:
+            by_mode[mode].active_7d = count
+
+    active30_counts = (
+        db.query(models.AnalyticsInstall.mode, func.count(models.AnalyticsInstall.id))
+        .filter(models.AnalyticsInstall.last_seen >= thirty_days_ago)
+        .group_by(models.AnalyticsInstall.mode)
+        .all()
+    )
+    for mode, count in active30_counts:
+        if mode in by_mode:
+            by_mode[mode].active_30d = count
+
+    launch_sums = (
+        db.query(models.AnalyticsInstall.mode, func.coalesce(func.sum(models.AnalyticsInstall.launch_count), 0))
+        .group_by(models.AnalyticsInstall.mode)
+        .all()
+    )
+    for mode, launches in launch_sums:
+        if mode in by_mode:
+            by_mode[mode].launches = int(launches or 0)
+
+    events_per_mode = (
+        db.query(models.AnalyticsInstall.mode, func.count(models.AnalyticsEvent.id))
+        .join(
+            models.AnalyticsInstall,
+            models.AnalyticsInstall.id == models.AnalyticsEvent.install_id,
+        )
+        .group_by(models.AnalyticsInstall.mode)
+        .all()
+    )
+    for mode, count in events_per_mode:
+        if mode in by_mode:
+            by_mode[mode].events_total = count
+
+    jobs_created_per_mode = (
+        db.query(models.AnalyticsInstall.mode, func.count(models.AnalyticsEvent.id))
+        .join(
+            models.AnalyticsInstall,
+            models.AnalyticsInstall.id == models.AnalyticsEvent.install_id,
+        )
+        .filter(models.AnalyticsEvent.event == "job_create")
+        .group_by(models.AnalyticsInstall.mode)
+        .all()
+    )
+    for mode, count in jobs_created_per_mode:
+        if mode in by_mode:
+            by_mode[mode].jobs_created = count
+
+    users_exported_per_mode = (
+        db.query(models.AnalyticsInstall.mode, func.count(models.AnalyticsEvent.id))
+        .join(
+            models.AnalyticsInstall,
+            models.AnalyticsInstall.id == models.AnalyticsEvent.install_id,
+        )
+        .filter(models.AnalyticsEvent.event == "export_json")
+        .group_by(models.AnalyticsInstall.mode)
+        .all()
+    )
+    for mode, count in users_exported_per_mode:
+        if mode in by_mode:
+            by_mode[mode].users_exported = count
+
     return schemas.AdminStats(
         unique_installs=unique_installs,
         active_7d=active_7d,
@@ -248,4 +329,5 @@ def admin_stats(db: Session = Depends(get_db)):
         total_events=total_events,
         jobs_created=jobs_created,
         users_exported=users_exported,
+        by_mode=by_mode,
     )
