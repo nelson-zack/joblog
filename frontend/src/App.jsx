@@ -237,17 +237,17 @@ function App() {
       const data = JSON.stringify(payload);
       if (navigator.sendBeacon) {
         const blob = new Blob([data], { type: "application/json" });
-        navigator.sendBeacon(url, blob);
-      } else {
-        fetch(url, {
-          method: "POST",
-          headers: { "Content-Type": "application/json" },
-          body: data,
-          keepalive: true,
-        }).catch((error) => {
-          console.debug("Heartbeat request failed", error);
-        });
+        if (navigator.sendBeacon(url, blob)) {
+          return;
+        }
       }
+      fetch(url, {
+        method: "POST",
+        headers: { "Content-Type": "application/json" },
+        body: data,
+      }).catch((error) => {
+        console.debug("Heartbeat request failed", error);
+      });
     } catch (error) {
       console.debug("Unable to send analytics heartbeat", error);
     }
@@ -259,30 +259,30 @@ function App() {
       if (!installId || !API_BASE_URL || effectiveAnalyticsOptOut) return;
       const payload = {
         id: installId,
-        event: eventName,
+        event: `${eventName}_${mode}`,
         ts: Date.now(),
       };
       const url = `${API_BASE_URL}/analytics/event`;
       const data = JSON.stringify(payload);
       try {
-        if (navigator.sendBeacon) {
-          const blob = new Blob([data], { type: "application/json" });
-          navigator.sendBeacon(url, blob);
-        } else {
-          fetch(url, {
-            method: "POST",
-            headers: { "Content-Type": "application/json" },
-            body: data,
-            keepalive: true,
-          }).catch((error) => {
-            console.debug("Analytics event failed", error);
-          });
+      if (navigator.sendBeacon) {
+        const blob = new Blob([data], { type: "application/json" });
+        if (navigator.sendBeacon(url, blob)) {
+          return;
         }
-      } catch (error) {
-        console.debug("Unable to record analytics event", error);
       }
-    },
-    [installId, API_BASE_URL, effectiveAnalyticsOptOut]
+      fetch(url, {
+        method: "POST",
+        headers: { "Content-Type": "application/json" },
+        body: data,
+      }).catch((error) => {
+        console.debug("Analytics event failed", error);
+      });
+    } catch (error) {
+      console.debug("Unable to record analytics event", error);
+    }
+  },
+    [installId, API_BASE_URL, effectiveAnalyticsOptOut, mode]
   );
 
   const handleAnalyticsToggle = useCallback((disabled) => {

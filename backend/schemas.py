@@ -35,7 +35,7 @@ class AnalyticsHeartbeat(BaseModel):
 
 class AnalyticsEventIn(BaseModel):
     id: UUID
-    event: Literal["job_create", "job_update", "job_delete", "export_json", "import_json"]
+    event: str
     ts: int
 
 
