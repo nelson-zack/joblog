@@ -1,204 +1,236 @@
-# Job Log
+# Job Log – Track Your Pipeline Without Losing Privacy
 
-A full-stack web app to track, organize, and analyze job applications — and the job tracker I personally use.
+![React Badge](https://img.shields.io/badge/React-19-61dafb?logo=react&logoColor=white)
+![FastAPI Badge](https://img.shields.io/badge/FastAPI-0.115-05998b?logo=fastapi&logoColor=white)
+![Tailwind Badge](https://img.shields.io/badge/Tailwind%20CSS-3.3-38bdf8?logo=tailwindcss&logoColor=white)
+![PostgreSQL Badge](https://img.shields.io/badge/PostgreSQL-15-4169e1?logo=postgresql&logoColor=white)
+![Vercel Badge](https://img.shields.io/badge/Frontend-Vercel-black?logo=vercel)
+![Render Badge](https://img.shields.io/badge/Backend-Render-46e3b7?logo=render&logoColor=white)
 
-## Features (Completed)
+Job Log is a privacy-first job application tracker with built-in analytics and three usage modes so candidates, recruiters, and owners can all see what matters—without sharing sensitive data.
 
-- Add new job applications via form
-- View all job applications in a clean UI
-- Delete applications from the list
-- Display job tags as styled pill badges
-- Edit job status, notes, and tags
-- Filter jobs by status and tag
-- Export applications to CSV
-- 7-day application trend chart (Bar graph)
-- Status history tracking (every status change is logged)
-- Enhanced analytics (based on full status history, not just current state)
-- Multi-mode support: Admin (API), Personal (IndexedDB), and Demo (sessionStorage) with onboarding chooser
-- Mode badge, inline banners, and backup reminders so visitors always know which mode they are using, how data is stored, and how to stay safe
-- Loading spinner during backend startup (Render cold start)
-- React frontend communicates with FastAPI backend using Axios
-- Backend stores jobs in a PostgreSQL database using SQLAlchemy ORM
-- Tailwind CSS used for modern, responsive styling
-- Light and dark themes use distinct font, color, and tag styles for cohesive design
-- Custom dark mode theme styled to match personal portfolio design
-- User theme toggle with localStorage persistence and system sync
-- Auto-sync with system theme preference
-- Fully deployed frontend and backend (Vercel + Render)
-  - Automatic normalization of job dates, tags, and status history entries to ensure consistent formatting in both frontend and backend.
-  - Tag deduplication logic prevents repeated tags on the same job.
-  - Unified input field styling across all form elements, including a styled date picker with calendar icon and consistent focus states matching the light/dark theme accents.
-  - Improved job status tracking:
-    - Distinguishes between companies interviewed and interview rounds
-    - Added UI controls (+/−) to adjust interview rounds with preview
-    - Prevents auto-increment of interview rounds when switching to Interview status
-  - Cleaner wording and consistency in job statuses and history entries (e.g., "Interview Round(s):" pluralized automatically, "Offered on"/"Rejected on" with explicit dates)
-  - Entries sorted newest to oldest at the day level, and newest first within each day
-  - Location tags expanded to include Remote, Hybrid, and On-Site with unified pill styling
-
-## Features In Progress / Planned
-
-- Monthly trend analytics
-- Interview/offer timeline graphs
-- AI tools for summarizing job descriptions and generating cover letters
-- CSV import for bulk uploads
-- Additional analytics (e.g., per-company interview round counts, timeline visualizations)
+---
 
 ## Live Demo
 
-- **Frontend**: https://joblog.zacknelson.dev
-- **Backend API**: https://joblog-api.onrender.com
+| Layer | URL | Notes |
+| --- | --- | --- |
+| Frontend | https://joblog.zacknelson.dev | React + Vite deployed on Vercel |
+| Backend API | https://joblog-api.onrender.com | FastAPI on Render (requires `?key=<admin>` for write access) |
 
-## Modes
+> **Screenshots & Walkthroughs**  
+> 📸 TODO: Add updated screenshots and a short GIF of mode switching + admin dashboard. Save media under `assets/` and link them here.
 
-- **Personal (Local)** — When no `?key=` is present and you choose *Personal* on first launch, JobLog stores everything privately in IndexedDB. Changes persist across browser sessions, you can export/import JSON backups, and nothing is synced or uploaded. Dismissible reminders keep users aware of backup best practices.
-- **Public Demo** — Also available without a key. Choose *Demo* to load a curated dataset (dates dynamically align with “last 7 days” for believable analytics). Data lives in `sessionStorage`, so it disappears when the tab closes or when you hit Reset Demo. A dashed amber banner reinforces that the data is ephemeral.
-- **Admin (Private)** — Visiting with a valid `?key=...` keeps the original server-backed behavior: FastAPI, PostgreSQL, and all real data. This is how the private production instance continues to track 250+ applications.
+---
 
-An onboarding modal guides first-time visitors without keys. You can revisit the choice from the Settings drawer.
+## Modes at a Glance
 
-### Privacy & Backups
+| Mode | Where data lives | Capabilities | Analytics | Ideal for |
+| --- | --- | --- | --- | --- |
+| **Public Demo** | In-browser `sessionStorage` seeded from `/src/mock/jobs.sample.json` | Explore UI, sort/filter, export CSV. Reset anytime. | Heartbeat + events recorded as `*_demo` | Recruiter quick look |
+| **Personal (Local)** | Browser IndexedDB via `localforage`; JSON/CSV export for backups | Full CRUD, export/import JSON, backup reminders. No network writes. | Heartbeat + events `*_local` (anonymous) | Candidates tracking real applications |
+| **Admin (Private)** | Render-hosted PostgreSQL via API key (`?key=...`) | Full CRUD against production DB, admin analytics dashboard | Heartbeat + events `*_admin` (admin-only view) | Owner reviewing real metrics |
 
-- Local/Demo modes never fire axios/fetch calls; they only interact with browser storage.
-- Personal mode offers a backup reminder if you haven’t exported in 30+ days. Use **Settings → Export JSON** to capture versioned backups or **Import JSON** to restore, and you can re-show the reminder anytime from Settings.
-- CSV export is available in Settings for quick sharing, but remember that personal mode has no cross-device sync yet—you’ll need to import your JSON backup on another device manually.
+---
 
-## Anonymous Analytics
+## Key Features
 
-To understand how JobLog is used (and only when analytics aren’t disabled or blocked by your browser), the app sends a single anonymous “heartbeat” on launch and optional aggregate events. Each browser install gets a random UUID that never leaves the device except as that anonymous identifier.
+- Instant mode switcher with onboarding modal and persistent preference.
+- Rich job cards with status history, interview round tracking, tags, CSV export.
+- Personal mode backup reminder + one-click JSON export/import.
+- Anonymous analytics heartbeat/events with admin-only dashboard (per-mode breakdown).
+- Tailwind-powered theme with live dark/light toggle.
+- Local-first architecture that never leaks job data from non-admin modes.
 
-We collect:
+<details>
+<summary>More Feature Details</summary>
 
-- Install UUID, first/last seen timestamps, current mode (`demo|local|admin`), app version, and a launch counter.
-- Optional aggregate events: `job_create`, `job_update`, `job_delete`, `export_json`, `import_json`.
+- Status history normalization keeps dates strict `YYYY-MM-DD` across API + UI.
+- Tag editing, filtering, per-mode banners (cyan for personal, amber for demo).
+- Admin-only Settings drawer actions: data clear, telemetry opt-out, reminder reset.
+- `selectStore` abstraction chooses API vs IndexedDB vs demo seed automatically.
+- 7-day trend visualization (Chart.js) for quick pipeline review.
+- CSV exporter normalizes line breaks so spreadsheets stay clean.
 
-We **do not** collect job content, company names, personal data, IP addresses, or user-agent strings. Data is never shared outside the JobLog project, and only admin sessions (`?key=...`) can view the aggregate dashboard.
+</details>
 
-### Opting out
-
-- Analytics are disabled automatically if your browser’s **Do Not Track** / Global Privacy Control setting is enabled.
-- You can toggle telemetry off at any time under **Settings → Disable anonymous analytics**. The toggle persists locally and stops all future heartbeats/events.
-- Want to see the disclosure again? Use the same settings panel to re-show the personal-mode reminder banner.
+---
 
 ## Tech Stack
 
-- **Frontend:** React + Tailwind CSS (Vite)
-- **Backend:** FastAPI (Python)
-- **Database:** PostgreSQL (Render), SQLite (local dev)
-- **Dev Tools:** Axios, GitHub, VS Code, Chart.js
-- **Deployment:** Vercel (frontend) + Render (backend + DB)
-- UptimeRobot pings the backend every 30 seconds to prevent cold starts and ensure fast response times
+| Layer | Tooling |
+| --- | --- |
+| Frontend | React 19, Vite 6, Tailwind CSS 3, Chart.js 4 (`react-chartjs-2`), localforage, Zod |
+| Backend | FastAPI 0.115, SQLAlchemy 2, Pydantic 2, Uvicorn |
+| Storage | PostgreSQL (prod), SQLite fallback (`jobs.db`) for local dev, IndexedDB (Personal mode), `sessionStorage` (Demo mode) |
+| Deployment | Vercel (frontend), Render (backend + PostgreSQL), UptimeRobot (keep backend warm) |
+
+---
+
+## Architecture
+
+```mermaid
+flowchart LR
+    subgraph Browser
+        app["React + Vite App\nModes: Demo / Personal / Admin"]
+        indexedDB[(IndexedDB – Personal)]
+        sessionStorage[(sessionStorage – Demo)]
+    end
+
+    backend["FastAPI API\n/jobs CRUD\n/analytics heartbeat + events"]
+    db[(PostgreSQL / SQLite dev)]
+
+    app <--> backend
+    backend --> db
+    app --> indexedDB
+    app --> sessionStorage
+```
+
+---
+
+## Anonymous Analytics
+
+Job Log records only install-level metrics so you can benchmark engagement without exposing PII.
+
+- **Heartbeat**: `{ id (UUID), mode (demo|local|admin), version, ts }` on launch.
+- **Events**: `{ id, event }` for `job_create|job_update|job_delete|export_json|import_json` suffixed by mode (`job_create_demo` etc.).
+- **Storage**: FastAPI tables `analytics_installs` and `analytics_events`; viewable only on the admin dashboard.
+- **Opt-out**: Toggle in Settings, automatically disabled if the browser sends **Do Not Track** / Global Privacy Control.
+- **Blockers**: Browser extensions (uBlock Origin, etc.) can suppress requests; the dashboard surfaces zero counts if blocked.
+
+No job content, company names, IP addresses, or user agents are collected.
 
 ---
 
 ## Getting Started (Local Dev)
 
-### Backend (FastAPI)
+### 1. Clone & prerequisites
+
+```bash
+# macOS/Linux
+python3 -m venv venv && source venv/bin/activate
+
+# Windows (PowerShell)
+python -m venv venv
+venv\Scripts\Activate.ps1
+```
+
+### 2. Backend (FastAPI)
 
 ```bash
 cd backend
-python3 -m venv venv
-source venv/bin/activate
 pip install -r requirements.txt
+
+# create backend/.env with
+# API_KEY=<redacted>
+# DATABASE_URL=postgresql://<user>:<redacted>@localhost:5432/joblog
+
 uvicorn main:app --reload
 ```
 
-### Create a .env file inside /backend with:
+If `DATABASE_URL` is omitted the API falls back to `sqlite:///./jobs.db`.
 
-```bash
-API_KEY=your_secret_key_here
-```
-
-### Frontend (React)
+### 3. Frontend (React + Vite)
 
 ```bash
 cd frontend
 npm install
+# .env.local
+# VITE_API_BASE_URL=http://localhost:8000
+# VITE_APP_VERSION=dev  # optional, defaults to "dev"
 npm run dev
 ```
 
-App runs at: http://localhost:5173
-Backend API at: http://localhost:8000/docs
+Visit http://localhost:5173. Admin actions require `?key=<API_KEY>` in the URL.
 
-### Debugging Timezones Locally
-
-You can simulate different "current times" in the frontend using the `debugNow` query parameter.  
-Example:
-
-```
-http://localhost:5173/?debugNow=2025-08-28T19:30:00
-```
-
-This is useful for testing how the 7-day trend chart buckets applications across days and verifying that date rollovers align with your local timezone. In production, this parameter is ignored.
-
-### Folder Structure
+### 4. Useful scripts
 
 ```bash
+npm run build    # production bundle
+npm run lint     # eslint validation
+```
+
+---
+
+## Configuration Reference
+
+| File | Variable | Required? | Purpose | Example |
+| --- | --- | --- | --- | --- |
+| `backend/.env` | `API_KEY` | ✅ | Protect create/update/delete endpoints | `API_KEY=<redacted>` |
+|  | `DATABASE_URL` | ⛔ (defaults to SQLite) | PostgreSQL connection string for Render | `postgresql://<user>:<redacted>@host:5432/joblog` |
+| `frontend/.env.local` | `VITE_API_BASE_URL` | ✅ | Points UI to FastAPI (http://localhost:8000 in dev) | `VITE_API_BASE_URL=http://localhost:8000` |
+|  | `VITE_APP_VERSION` | ⛔ | Displays build version in analytics payloads | `VITE_APP_VERSION=1.2.0` |
+
+> Never commit real API keys or database credentials. Use `.env` and `.env.local` locally and configure secrets in Vercel/Render dashboards.
+
+---
+
+## Data & Privacy
+
+- **Local-first**: Demo uses bundled JSON; Personal mode never leaves the browser; Admin mode talks to PostgreSQL via API key.
+- **Backups**: JSON export/import accessible in Settings; reminder surfaces in Personal mode if no backup in 30 days.
+- **CSV exports**: Available in every mode for quick sharing.
+- **Limitations**: Personal data lives in one browser profile—export before clearing cache or switching devices.
+
+---
+
+## Folder Structure
+
+```
 joblog/
 ├── backend/
-│   ├── main.py
-│   ├── models.py
-│   ├── schemas.py
-│   ├── database.py
-│   ├── requirements.txt
-│   └── .env.example
+│   ├── main.py              # FastAPI entrypoint
+│   ├── database.py          # SQLAlchemy engine + SessionLocal
+│   ├── models.py            # Job + analytics tables
+│   ├── schemas.py           # Pydantic models
+│   └── requirements.txt
 ├── frontend/
-│   ├── public/
-│   ├── postcss.config.js
-│   ├── tailwind.config.js
-│   └── src/
-│       ├── components/
-│       │   ├── JobForm.jsx
-│       │   ├── JobList.jsx
-│       │   └── ApplicationTrends.jsx
-│       ├── App.jsx
-│       └── index.css
+│   ├── src/
+│   │   ├── App.jsx          # Mode orchestration + analytics
+│   │   ├── components/      # UI building blocks (AdminStats, JobForm...)
+│   │   ├── context/         # ModeContext provider
+│   │   ├── storage/         # API, IndexedDB, Demo drivers
+│   │   └── mock/jobs.sample.json
+│   ├── package.json
+│   └── vite.config.js
 └── README.md
 ```
 
-## Milestone Plan
+---
 
-### Week 1 – MVP
+## Roadmap
 
-- Basic CRUD (add/delete jobs)
-- React + FastAPI + SQLite local setup
+- [ ] Export anonymized analytics snapshot as CSV for recruiters.
+- [ ] Add interview timeline visualization to complement the 7-day chart.
+- [ ] OAuth-based admin login (replace querystring key).
+- [ ] Scheduled Cloud backup for Personal mode exports.
 
-### Week 2 – UI Polish & Filtering
+---
 
-- Tailwind styling + layout cleanup
-- Tag pill display
-- Status + tag filtering
+## Changelog Highlights
 
-### Week 3 – “Wow” Features
+- **2025-10** – Mode-aware analytics heartbeat/events + admin dashboard with per-mode buckets.
+- **2025-09** – Introduced Personal (IndexedDB) + Demo (sessionStorage) modes with onboarding + banners.
+- **2025-08** – Storage abstraction (`selectStore`) and JSON import/export with backup reminder.
 
-- Deployed frontend (Vercel) + backend (Render)
-- Switched backend to PostgreSQL with persistent storage
-- Added analytics dashboard (stats + bar chart)
-- Export to CSV
-- API key-based write protection
-- Improved README for portfolio visibility
+---
 
-## Portfolio Write-up
+## Attribution & License
 
-I built this project to manage my real job applications and track my career outreach in a clean, centralized tool. I wanted something lightweight, easy to use, and built with tools I’m learning professionally.
+Created by Zack Nelson. Licensed under the MIT License (add `LICENSE` file before production release).
 
-**What I used:**  
-React (Vite) for the frontend, FastAPI for the backend, and PostgreSQL for persistent storage. I used Tailwind CSS to keep the styling efficient and modern.
+---
 
-**What I learned:**
+## Badges Rollup
 
-- End-to-end full-stack deployment using Vercel + Render
-- Working with Axios, `useEffect`, form state, and controlled inputs in React
-- Creating and consuming REST APIs with FastAPI
-- Connecting FastAPI to PostgreSQL using SQLAlchemy ORM
-- Handling CORS and async fetch logic
-- Styling with Tailwind for clean, responsive UIs
-- Creating basic data visualizations using Chart.js
-- Exporting frontend state as downloadable CSV
-- Using environment variables and API keys to protect write access
-- Schema migrations and production-safe database updates
-- Persistent status history implementation and frontend integration
-- Implementing dark mode with Tailwind and persisting user preference with localStorage
-- Designing custom light and dark mode themes with consistent color palettes and typography
+[![React](https://img.shields.io/badge/React-19-61dafb?logo=react&logoColor=white)](https://react.dev/)
+[![FastAPI](https://img.shields.io/badge/FastAPI-0.115-05998b?logo=fastapi&logoColor=white)](https://fastapi.tiangolo.com/)
+[![Tailwind CSS](https://img.shields.io/badge/Tailwind%20CSS-3.3-38bdf8?logo=tailwindcss&logoColor=white)](https://tailwindcss.com/)
+[![PostgreSQL](https://img.shields.io/badge/PostgreSQL-15-4169e1?logo=postgresql&logoColor=white)](https://www.postgresql.org/)
+[![Vercel](https://img.shields.io/badge/Frontend-Vercel-black?logo=vercel)](https://vercel.com/)
+[![Render](https://img.shields.io/badge/Backend-Render-46e3b7?logo=render)](https://render.com/)
 
-I use this tool personally and will continue building on it as part of my ongoing growth. To improve performance and avoid cold starts, I set up a UptimeRobot ping monitor that keeps the backend service responsive.
+---
+
+> Live stats (example): _2 unique installs • 70 launches • 7 total events_  
+> (Real-time values appear on the Admin dashboard.)
