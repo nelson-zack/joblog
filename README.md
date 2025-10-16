@@ -70,12 +70,12 @@ Job Log is a privacy-first job application tracker with built-in analytics and t
 ## Architecture
 
 ```mermaid
-flowchart TD
+graph TD
     app["React + Vite SPA\nModes: Demo / Personal / Admin"]
-    sessionStorage[(sessionStorage\nDemo seed data)]
-    indexedDB[(IndexedDB\nPersonal backups)]
-    api["FastAPI /jobs & /analytics"]
-    db[(PostgreSQL (prod)\nSQLite (dev fallback))]
+    sessionStorage[(Demo sessionStorage seed)]
+    indexedDB[(Personal IndexedDB backups)]
+    api["FastAPI /jobs · /analytics"]
+    db[(PostgreSQL prod / SQLite dev)]
 
     app --> api
     app --> sessionStorage
