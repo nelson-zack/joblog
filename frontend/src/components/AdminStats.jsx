@@ -20,7 +20,12 @@ const AdminStats = ({ apiKey }) => {
     if (!apiKey || !API_BASE_URL) return;
     let cancelled = false;
     setStatus('loading');
-    fetch(`${API_BASE_URL}/admin/stats?key=${encodeURIComponent(apiKey)}`)
+    fetch(`${API_BASE_URL}/admin/stats`, {
+      headers: {
+        'X-Admin-Key': apiKey,
+        Authorization: `Bearer ${apiKey}`
+      }
+    })
       .then((response) => {
         if (!response.ok) {
           throw new Error(`Failed to load stats: ${response.status}`);

@@ -16,7 +16,7 @@ Job Log is a privacy-first job application tracker with built-in analytics and t
 | Layer | URL | Notes |
 | --- | --- | --- |
 | Frontend | https://joblog.zacknelson.dev | React + Vite deployed on Vercel |
-| Backend API | https://joblog-api.onrender.com | FastAPI on Render (requires `?key=<admin>` for write access) |
+| Backend API | https://joblog-api.onrender.com | FastAPI on Render (requires `X-Admin-Key` or `Authorization: Bearer …` header for admin access) |
 
 > **Screenshots & Walkthroughs**  
 > 📸 TODO: Add updated screenshots and a short GIF of mode switching + admin dashboard. Save media under `assets/` and link them here.
@@ -29,7 +29,7 @@ Job Log is a privacy-first job application tracker with built-in analytics and t
 | --- | --- | --- | --- | --- |
 | **Public Demo** | In-browser `sessionStorage` seeded from `/src/mock/jobs.sample.json` | Explore UI, sort/filter, export CSV. Reset anytime. | Heartbeat + events recorded as `*_demo` | Recruiter quick look |
 | **Personal (Local)** | Browser IndexedDB via `localforage`; JSON/CSV export for backups | Full CRUD, export/import JSON, backup reminders. No network writes. | Heartbeat + events `*_local` (anonymous) | Candidates tracking real applications |
-| **Admin (Private)** | Render-hosted PostgreSQL via API key (`?key=...`) | Full CRUD against production DB, admin analytics dashboard | Heartbeat + events `*_admin` (admin-only view) | Owner reviewing real metrics |
+| **Admin (Private)** | Render-hosted PostgreSQL via API key (sent via admin headers) | Full CRUD against production DB, admin analytics dashboard | Heartbeat + events `*_admin` (admin-only view) | Owner reviewing real metrics |
 
 ---
 
@@ -132,7 +132,7 @@ npm install
 npm run dev
 ```
 
-Visit http://localhost:5173. Admin actions require `?key=<API_KEY>` in the URL.
+Visit http://localhost:5173. Append `?key=<API_KEY>` once so the SPA can load the admin key; all API calls now forward it via `X-Admin-Key` / `Authorization: Bearer …` headers.
 
 ### 4. Useful scripts
 
@@ -147,12 +147,12 @@ npm run lint     # eslint validation
 
 | File | Variable | Required? | Purpose | Example |
 | --- | --- | --- | --- | --- |
-| `backend/.env` | `API_KEY` | ✅ | Protect create/update/delete endpoints | `API_KEY=<redacted>` |
+| `backend/.env` | `API_KEY` | ✅ | Protect privileged endpoints (validated against admin headers) | `API_KEY=<redacted>` |
 |  | `DATABASE_URL` | ⛔ (defaults to SQLite) | PostgreSQL connection string for Render | `postgresql://<user>:<redacted>@host:5432/joblog` |
 | `frontend/.env.local` | `VITE_API_BASE_URL` | ✅ | Points UI to FastAPI (http://localhost:8000 in dev) | `VITE_API_BASE_URL=http://localhost:8000` |
 |  | `VITE_APP_VERSION` | ⛔ | Displays build version in analytics payloads | `VITE_APP_VERSION=1.2.0` |
 
-> Never commit real API keys or database credentials. Use `.env` and `.env.local` locally and configure secrets in Vercel/Render dashboards.
+> Never commit real API keys or database credentials. Use `.env` and `.env.local` locally and configure secrets in Vercel/Render dashboards. Always send the admin key via request headers—query-string access is no longer honored by the API.
 
 ---
 

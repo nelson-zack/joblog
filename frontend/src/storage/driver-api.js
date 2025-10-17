@@ -1,7 +1,15 @@
 import axios from 'axios';
 
-const buildQuery = (apiKey) =>
-  apiKey ? `?key=${encodeURIComponent(apiKey)}` : '';
+const applyAdminHeaders = (client, apiKey) => {
+  if (!apiKey) {
+    delete client.defaults.headers.common['X-Admin-Key'];
+    delete client.defaults.headers.common.Authorization;
+    return;
+  }
+
+  client.defaults.headers.common['X-Admin-Key'] = apiKey;
+  client.defaults.headers.common.Authorization = `Bearer ${apiKey}`;
+};
 
 export const createApiDriver = ({ apiKey }) => {
   const baseUrl = import.meta.env.VITE_API_BASE_URL;
@@ -15,9 +23,10 @@ export const createApiDriver = ({ apiKey }) => {
     baseURL: baseUrl
   });
 
+  applyAdminHeaders(client, apiKey);
+
   const fetchJobs = async () => {
-    const suffix = buildQuery(apiKey);
-    const response = await client.get(`/jobs${suffix}`);
+    const response = await client.get('/jobs/');
     return response.data || [];
   };
 
@@ -26,18 +35,15 @@ export const createApiDriver = ({ apiKey }) => {
       return fetchJobs();
     },
     async createJob(payload) {
-      const query = buildQuery(apiKey);
-      const response = await client.post(`/jobs/${query}`, payload);
+      const response = await client.post('/jobs/', payload);
       return response.data;
     },
     async updateJob(id, payload) {
-      const query = buildQuery(apiKey);
-      const response = await client.put(`/jobs/${id}${query}`, payload);
+      const response = await client.put(`/jobs/${id}`, payload);
       return response.data;
     },
     async deleteJob(id) {
-      const query = buildQuery(apiKey);
-      await client.delete(`/jobs/${id}${query}`);
+      await client.delete(`/jobs/${id}`);
     },
     async reset() {
       // No reset concept for the API driver.

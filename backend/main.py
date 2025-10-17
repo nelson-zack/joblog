@@ -41,10 +41,27 @@ def get_db():
         db.close()
 
 # === API Key Protection ===
+# Admin key is required for privileged routes. Accept either `X-Admin-Key`
+# or an `Authorization: Bearer <token>` header to support standard clients.
 API_KEY = os.environ.get("API_KEY")
 
+def _extract_admin_key(request: Request) -> str | None:
+    header_key = request.headers.get("x-admin-key")
+    if header_key:
+        return header_key.strip()
+
+    auth_header = request.headers.get("authorization")
+    if auth_header:
+        scheme, _, token = auth_header.partition(" ")
+        if scheme.lower() == "bearer" and token:
+            return token.strip()
+    return None
+
 def verify_api_key(request: Request):
-    key = request.query_params.get("key")
+    if API_KEY is None:
+        return
+
+    key = _extract_admin_key(request)
     if key != API_KEY:
         raise HTTPException(status_code=401, detail="Unauthorized")
 
@@ -110,7 +127,11 @@ def create_job(job: schemas.JobCreate, db: Session = Depends(get_db)):
     db.refresh(db_job)
     return db_job
 
-@app.get("/jobs/", response_model=list[schemas.JobOut])
+@app.get(
+    "/jobs/",
+    response_model=list[schemas.JobOut],
+    dependencies=[Depends(verify_api_key)],
+)
 def get_all_jobs(db: Session = Depends(get_db)):
     return db.query(models.Job).all()
 
