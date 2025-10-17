@@ -137,7 +137,7 @@ def get_all_jobs(db: Session = Depends(get_db)):
 
 @app.delete("/jobs/{job_id}", dependencies=[Depends(verify_api_key)])
 def delete_job(job_id: int, db: Session = Depends(get_db)):
-    job = db.query(models.Job).get(job_id)
+    job = db.get(models.Job, job_id)
     if not job:
         return {"error": "Job not found"}
     db.delete(job)
@@ -146,7 +146,7 @@ def delete_job(job_id: int, db: Session = Depends(get_db)):
 
 @app.put("/jobs/{job_id}", response_model=schemas.JobOut, dependencies=[Depends(verify_api_key)])
 def update_job(job_id: int, updated_job: schemas.JobCreate, db: Session = Depends(get_db)):
-    job = db.query(models.Job).get(job_id)
+    job = db.get(models.Job, job_id)
     if not job:
         return {"error": "Job not found"}
 
@@ -170,15 +170,35 @@ def update_job(job_id: int, updated_job: schemas.JobCreate, db: Session = Depend
         date_val = normalize_ymd(entry.get("date")) or date_norm
         if status_val:
             norm_hist.append({"status": status_val, "date": date_val})
-    updated_data["status_history"] = norm_hist
 
-    # If status changed, append a history entry with today's (or date_applied) date
-    if updated_data.get("status") is not None and updated_data["status"] != job.status:
+    existing_history: list = []
+    if isinstance(job.status_history, list):
+        existing_history = [
+            entry.copy() if isinstance(entry, dict) else entry
+            for entry in job.status_history
+        ]
+
+    final_history = norm_hist if norm_hist else [
+        entry.copy() if isinstance(entry, dict) else entry for entry in existing_history
+    ]
+
+    status_changed = (
+        updated_data.get("status") is not None and updated_data["status"] != job.status
+    )
+    if status_changed:
+
         append_date = date_norm or date.today().strftime("%Y-%m-%d")
-        # Ensure existing history is a list
-        if not isinstance(job.status_history, list):
-            job.status_history = []
-        job.status_history.append({"status": updated_data["status"], "date": append_date})
+        if not final_history:
+            final_history = []
+        if not any(
+            isinstance(entry, dict)
+            and entry.get("status") == updated_data["status"]
+            and entry.get("date") == append_date
+            for entry in final_history
+        ):
+            final_history.append({"status": updated_data["status"], "date": append_date})
+
+    updated_data["status_history"] = final_history
 
     # Apply updates
     for key, value in updated_data.items():
@@ -210,7 +230,7 @@ def analytics_heartbeat(payload: schemas.AnalyticsHeartbeat, db: Session = Depen
     seen_at = _ts_to_datetime(payload.ts)
     install_id = str(payload.id)
 
-    install = db.query(models.AnalyticsInstall).get(install_id)
+    install = db.get(models.AnalyticsInstall, install_id)
     if install is None:
         install = models.AnalyticsInstall(
             id=install_id,
