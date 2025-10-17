@@ -1,12 +1,12 @@
 from fastapi import FastAPI, Depends, HTTPException, Request, Response
 from fastapi.middleware.cors import CORSMiddleware
 from sqlalchemy.orm import Session
-from sqlalchemy import func
+from sqlalchemy import func, case
 import os
 import re
 from datetime import date, datetime, timedelta
 
-from database import Base, engine, SessionLocal
+from database import Base, engine, SessionLocal, ensure_indexes
 import models
 import schemas
 from dotenv import load_dotenv
@@ -31,6 +31,7 @@ app.add_middleware(
 
 # Create DB tables
 Base.metadata.create_all(bind=engine)
+ensure_indexes()
 
 # Dependency: get a DB session
 def get_db():
@@ -285,98 +286,107 @@ def admin_stats(db: Session = Depends(get_db)):
     seven_days_ago = now - timedelta(days=7)
     thirty_days_ago = now - timedelta(days=30)
 
-    unique_installs = db.query(models.AnalyticsInstall).count()
-    active_7d = db.query(models.AnalyticsInstall).filter(models.AnalyticsInstall.last_seen >= seven_days_ago).count()
-    active_30d = db.query(models.AnalyticsInstall).filter(models.AnalyticsInstall.last_seen >= thirty_days_ago).count()
-    total_launches = db.query(func.coalesce(func.sum(models.AnalyticsInstall.launch_count), 0)).scalar() or 0
+    install_totals = (
+        db.query(
+            func.count().label("unique_installs"),
+            func.sum(case((models.AnalyticsInstall.last_seen >= seven_days_ago, 1), else_=0)).label("active_7d"),
+            func.sum(case((models.AnalyticsInstall.last_seen >= thirty_days_ago, 1), else_=0)).label("active_30d"),
+            func.coalesce(func.sum(models.AnalyticsInstall.launch_count), 0).label("total_launches"),
+        ).one()
+    )
+
+    unique_installs = int(install_totals.unique_installs or 0)
+    active_7d = int(install_totals.active_7d or 0)
+    active_30d = int(install_totals.active_30d or 0)
+    total_launches = int(install_totals.total_launches or 0)
     launch_event_names = {f"launch_{m}" for m in ("demo", "local", "admin")}
 
     by_mode = {mode: schemas.ModeBucket() for mode in ("demo", "local", "admin")}
-    launch_events = (
-        db.query(models.AnalyticsEvent.event, func.count(models.AnalyticsEvent.id))
+    launch_rows = (
+        db.query(
+            models.AnalyticsEvent.event,
+            func.count().label("launches"),
+            func.count(func.distinct(models.AnalyticsEvent.install_id)).label("installs"),
+            func.count(
+                func.distinct(
+                    case(
+                        (models.AnalyticsEvent.ts >= seven_days_ago, models.AnalyticsEvent.install_id),
+                        else_=None,
+                    )
+                )
+            ).label("active_7d"),
+            func.count(
+                func.distinct(
+                    case(
+                        (models.AnalyticsEvent.ts >= thirty_days_ago, models.AnalyticsEvent.install_id),
+                        else_=None,
+                    )
+                )
+            ).label("active_30d"),
+        )
         .filter(models.AnalyticsEvent.event.in_(launch_event_names))
         .group_by(models.AnalyticsEvent.event)
         .all()
     )
-    for event_name, count in launch_events:
+    for row in launch_rows:
+        event_name = row.event
         _, mode_key = event_name.split("_", 1)
         if mode_key in by_mode:
-            by_mode[mode_key].launches = count
+            bucket = by_mode[mode_key]
+            bucket.launches = int(row.launches or 0)
+            bucket.installs = int(row.installs or 0)
+            bucket.active_7d = int(row.active_7d or 0)
+            bucket.active_30d = int(row.active_30d or 0)
 
-    launch_installs = (
-        db.query(models.AnalyticsEvent.event, func.count(func.distinct(models.AnalyticsEvent.install_id)))
-        .filter(models.AnalyticsEvent.event.in_(launch_event_names))
-        .group_by(models.AnalyticsEvent.event)
-        .all()
-    )
-    for event_name, count in launch_installs:
-        _, mode_key = event_name.split("_", 1)
-        if mode_key in by_mode:
-            by_mode[mode_key].installs = count
+    base_mode_cases = []
+    mode_cases = []
+    modes = ("demo", "local", "admin")
+    for base_event in ALLOWED_ANALYTICS_EVENTS:
+        for mode in modes:
+            suffixed = f"{base_event}_{mode}"
+            base_mode_cases.append((models.AnalyticsEvent.event == suffixed, base_event))
+            mode_cases.append((models.AnalyticsEvent.event == suffixed, mode))
 
-    launch_active7 = (
-        db.query(models.AnalyticsEvent.event, func.count(func.distinct(models.AnalyticsEvent.install_id)))
-        .filter(models.AnalyticsEvent.event.in_(launch_event_names))
-        .filter(models.AnalyticsEvent.ts >= seven_days_ago)
-        .group_by(models.AnalyticsEvent.event)
-        .all()
-    )
-    for event_name, count in launch_active7:
-        _, mode_key = event_name.split("_", 1)
-        if mode_key in by_mode:
-            by_mode[mode_key].active_7d = count
+    mode_expr = case(*mode_cases, else_=models.AnalyticsInstall.mode)
+    base_event_expr = case(*base_mode_cases, else_=models.AnalyticsEvent.event)
 
-    launch_active30 = (
-        db.query(models.AnalyticsEvent.event, func.count(func.distinct(models.AnalyticsEvent.install_id)))
-        .filter(models.AnalyticsEvent.event.in_(launch_event_names))
-        .filter(models.AnalyticsEvent.ts >= thirty_days_ago)
-        .group_by(models.AnalyticsEvent.event)
-        .all()
-    )
-    for event_name, count in launch_active30:
-        _, mode_key = event_name.split("_", 1)
-        if mode_key in by_mode:
-            by_mode[mode_key].active_30d = count
-
-    install_modes = {
-        install_id: mode_value
-        for install_id, mode_value in db.query(models.AnalyticsInstall.id, models.AnalyticsInstall.mode)
-    }
-
-    total_events = 0
-    jobs_created = 0
-    users_exported = 0
-
-    event_rows = (
-        db.query(models.AnalyticsEvent.event, models.AnalyticsEvent.install_id)
+    overall_nonlaunch = (
+        db.query(
+            func.count().label("total_events"),
+            func.sum(case((base_event_expr == "job_create", 1), else_=0)).label("jobs_created"),
+            func.sum(case((base_event_expr == "export_json", 1), else_=0)).label("users_exported"),
+        )
+        .outerjoin(models.AnalyticsInstall, models.AnalyticsEvent.install_id == models.AnalyticsInstall.id)
         .filter(~models.AnalyticsEvent.event.in_(launch_event_names))
+        .one()
+    )
+
+    total_events = int(overall_nonlaunch.total_events or 0)
+    jobs_created = int(overall_nonlaunch.jobs_created or 0)
+    users_exported = int(overall_nonlaunch.users_exported or 0)
+
+    per_mode_rows = (
+        db.query(
+            base_event_expr.label("base_event"),
+            mode_expr.label("mode"),
+            func.count().label("count"),
+        )
+        .outerjoin(models.AnalyticsInstall, models.AnalyticsEvent.install_id == models.AnalyticsInstall.id)
+        .filter(~models.AnalyticsEvent.event.in_(launch_event_names))
+        .group_by(base_event_expr, mode_expr)
         .all()
     )
 
-    for event_name, install_id in event_rows:
-        base_event = event_name
-        mode_for_event = None
-
-        if event_name in ALLOWED_ANALYTICS_EVENTS:
-            mode_for_event = install_modes.get(install_id)
-        else:
-            base_part, sep, suffix = event_name.rpartition("_")
-            if sep and base_part in ALLOWED_ANALYTICS_EVENTS and suffix in by_mode:
-                base_event = base_part
-                mode_for_event = suffix
-
-        total_events += 1
-        if base_event == "job_create":
-            jobs_created += 1
-        elif base_event == "export_json":
-            users_exported += 1
-
-        if mode_for_event in by_mode:
-            by_mode[mode_for_event].events_total += 1
-            if base_event == "job_create":
-                by_mode[mode_for_event].jobs_created += 1
-            elif base_event == "export_json":
-                by_mode[mode_for_event].users_exported += 1
+    for row in per_mode_rows:
+        mode_key = row.mode
+        if mode_key not in by_mode:
+            continue
+        bucket = by_mode[mode_key]
+        bucket.events_total += int(row.count or 0)
+        if row.base_event == "job_create":
+            bucket.jobs_created += int(row.count or 0)
+        elif row.base_event == "export_json":
+            bucket.users_exported += int(row.count or 0)
 
     return schemas.AdminStats(
         unique_installs=unique_installs,
