@@ -4,6 +4,8 @@ Thumbs.db
 *.log
 __pycache__/
 *.py[cod]
+coverage/
+.coverage
 
 # Node / frontend
 frontend/node_modules/
