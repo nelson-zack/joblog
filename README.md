@@ -1,5 +1,6 @@
 # Job Log – Track Your Pipeline Without Losing Privacy
 
+[![CI](https://github.com/nelson-zack/joblog/actions/workflows/ci.yml/badge.svg)](https://github.com/nelson-zack/joblog/actions/workflows/ci.yml)
 ![React Badge](https://img.shields.io/badge/React-19-61dafb?logo=react&logoColor=white)
 ![FastAPI Badge](https://img.shields.io/badge/FastAPI-0.115-05998b?logo=fastapi&logoColor=white)
 ![Tailwind Badge](https://img.shields.io/badge/Tailwind%20CSS-3.3-38bdf8?logo=tailwindcss&logoColor=white)
@@ -141,6 +142,15 @@ npm run build    # production bundle
 npm run lint     # eslint validation
 ```
 
+
+---
+
+## Contributing & Local Development
+
+- Frontend: `cd frontend && npm ci` to install dependencies; `npm run dev` starts Vite.
+- Backend: `cd backend && python3 -m venv venv && source venv/bin/activate` then `pip install -r requirements.txt`.
+- Environment secrets live in `.env` / `.env.local` files that are ignored; copy the snippets above to create your own.
+
 ---
 
 ## Testing
@@ -148,6 +158,7 @@ npm run lint     # eslint validation
 - **Backend:** `cd backend && pytest` — uses an isolated SQLite database with dependency overrides, so analytics calls stay local.
 - **Frontend:** `cd frontend && npm run test` — Vitest runs in jsdom with `fetch`/`sendBeacon` mocked to avoid real network traffic.
 - Coverage summaries land in `coverage/`. Add new backend fixtures under `backend/tests/` and frontend specs under `frontend/src/__tests__/`.
+
 
 ---
 
