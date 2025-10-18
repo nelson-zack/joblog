@@ -191,12 +191,12 @@ def update_job(job_id: int, updated_job: schemas.JobCreate, db: Session = Depend
         append_date = date_norm or date.today().strftime("%Y-%m-%d")
         if not final_history:
             final_history = []
-        if not any(
+        already_present = any(
             isinstance(entry, dict)
             and entry.get("status") == updated_data["status"]
-            and entry.get("date") == append_date
             for entry in final_history
-        ):
+        )
+        if not already_present:
             final_history.append({"status": updated_data["status"], "date": append_date})
 
     updated_data["status_history"] = final_history
