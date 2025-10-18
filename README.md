@@ -143,6 +143,14 @@ npm run lint     # eslint validation
 
 ---
 
+## Testing
+
+- **Backend:** `cd backend && pytest` — uses an isolated SQLite database with dependency overrides, so analytics calls stay local.
+- **Frontend:** `cd frontend && npm run test` — Vitest runs in jsdom with `fetch`/`sendBeacon` mocked to avoid real network traffic.
+- Coverage summaries land in `coverage/`. Add new backend fixtures under `backend/tests/` and frontend specs under `frontend/src/__tests__/`.
+
+---
+
 ## Configuration Reference
 
 | File | Variable | Required? | Purpose | Example |

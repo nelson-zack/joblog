@@ -1,0 +1,24 @@
+# General
+.DS_Store
+Thumbs.db
+*.log
+__pycache__/
+*.py[cod]
+coverage/
+.coverage
+
+# Node / frontend
+frontend/node_modules/
+frontend/dist/
+frontend/.env.local
+frontend/.env*
+
+# Python / backend
+backend/venv/
+backend/.env
+backend/.env.*
+backend/jobs.db
+
+# Editor / tooling
+.idea/
+.vscode/

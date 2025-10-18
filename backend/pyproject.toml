@@ -1,0 +1,3 @@
+[tool.pytest.ini_options]
+addopts = "-q --cov=. --cov-report=term --cov-report=xml:../coverage/backend.xml --cov-fail-under=60"
+testpaths = ["tests"]
