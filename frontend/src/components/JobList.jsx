@@ -14,7 +14,7 @@
  *  - onUpdateJob(id, payload, helpers): async handler to persist edits.
  *  - onDeleteJob(id): async handler to remove a job.
  */
-import React, { useState } from 'react';
+import React, { useState, useMemo, useCallback } from 'react';
 import { MODES } from '../storage/selectStore';
 import {
   parseYMDToUTC,
@@ -60,8 +60,12 @@ const JobList = ({
   // Optional dates for Offer/Rejected
   const [offerDate, setOfferDate] = useState(todayYMDLocal());
   const [rejectDate, setRejectDate] = useState(todayYMDLocal());
+  const editTags = useMemo(
+    () => parseTags(editFormData.tags),
+    [editFormData.tags]
+  );
 
-  const handleDelete = async (id) => {
+  const handleDelete = useCallback(async (id) => {
     try {
       await onDeleteJob?.(id);
     } catch (error) {
@@ -70,30 +74,34 @@ const JobList = ({
         alert('Failed to delete job on the server. Please try again.');
       }
     }
-  };
+  }, [onDeleteJob, isAdmin]);
 
-  const handleEditClick = (job) => {
+  const handleEditClick = useCallback((job) => {
+    const today = todayYMDLocal();
     setEditJobId(job.id);
     setEditFormData({ ...job });
     setRoundDelta(0);
-    setRoundAddDate(todayYMDLocal());
-    setOfferDate(todayYMDLocal());
-    setRejectDate(todayYMDLocal());
-  };
+    setRoundAddDate(today);
+    setOfferDate(today);
+    setRejectDate(today);
+  }, []);
 
-  const handleEditChange = (e) => {
-    setEditFormData({ ...editFormData, [e.target.name]: e.target.value });
-  };
+  const handleEditChange = useCallback((e) => {
+    const { name, value } = e.target;
+    setEditFormData((prev) => ({ ...prev, [name]: value }));
+  }, []);
 
-  const handleTagToggle = (tag) => {
-    const tags = parseTags(editFormData.tags);
-    const updated = tags.includes(tag)
-      ? tags.filter((t) => t !== tag)
-      : [...tags, tag];
-    setEditFormData({ ...editFormData, tags: joinTags(updated) });
-  };
+  const handleTagToggle = useCallback((tag) => {
+    setEditFormData((prev) => {
+      const tags = parseTags(prev.tags);
+      const updated = tags.includes(tag)
+        ? tags.filter((t) => t !== tag)
+        : [...tags, tag];
+      return { ...prev, tags: joinTags(updated) };
+    });
+  }, []);
 
-  const handleSave = async () => {
+  const handleSave = useCallback(async () => {
     const original = jobs.find((job) => job.id === editJobId);
     // Start from the latest server-backed history to avoid stale copies
     const updatedHistory = Array.isArray(original?.status_history)
@@ -236,7 +244,17 @@ const JobList = ({
         alert('Failed to update job on the server. Please try again.');
       }
     }
-  };
+  }, [
+    jobs,
+    editJobId,
+    editFormData,
+    roundDelta,
+    roundAddDate,
+    offerDate,
+    rejectDate,
+    isAdmin,
+    onUpdateJob
+  ]);
 
   // ---- ANALYTICS (renamed + refined) ----
   // ---- ANALYTICS ----
@@ -289,6 +307,36 @@ const JobList = ({
     totalSubmitted > 0
       ? `${((offers / totalSubmitted) * 100).toFixed(1)}%`
       : '0%';
+
+  const filteredSortedJobs = useMemo(() => {
+    const list = Array.isArray(jobs) ? jobs : [];
+    const filtered = list.filter((job) => {
+      const matchesStatus =
+        statusFilter === 'All'
+          ? true
+          : statusFilter === 'Interviewing'
+          ? job.status === 'Interviewing' ||
+            (Array.isArray(job.status_history) &&
+              job.status_history.some((s) => s.status === 'Interviewing'))
+          : job.status === statusFilter;
+      if (!matchesStatus) return false;
+      if (tagFilter === 'All') return true;
+      return job.tags ? parseTags(job.tags).includes(tagFilter) : false;
+    });
+
+    return filtered
+      .slice()
+      .sort((a, b) => {
+        const da = parseYMDToUTC(a.date_applied);
+        const db = parseYMDToUTC(b.date_applied);
+        if (da !== db) {
+          return db - da;
+        }
+        const aid = Number(a.id) || 0;
+        const bid = Number(b.id) || 0;
+        return bid - aid;
+      });
+  }, [jobs, statusFilter, tagFilter]);
 
   return (
     <div className='p-4 dark:bg-dark-background'>
@@ -405,34 +453,7 @@ const JobList = ({
       </div>
 
       <ul className='space-y-2'>
-        {jobs
-          .filter((job) => {
-            const matchesStatus =
-              statusFilter === 'All'
-                ? true
-                : statusFilter === 'Interviewing'
-                ? job.status === 'Interviewing' ||
-                  (Array.isArray(job.status_history) &&
-                    job.status_history.some((s) => s.status === 'Interviewing'))
-                : job.status === statusFilter;
-            const matchesTag =
-              tagFilter === 'All' ||
-              (job.tags && parseTags(job.tags).includes(tagFilter));
-            return matchesStatus && matchesTag;
-          })
-          .sort((a, b) => {
-            const da = parseYMDToUTC(a.date_applied);
-            const db = parseYMDToUTC(b.date_applied);
-            if (da !== db) {
-              // Primary: date descending (most recent at top)
-              return db - da;
-            }
-            // Secondary (same day): newest first within the day using id desc
-            const aid = Number(a.id) || 0;
-            const bid = Number(b.id) || 0;
-            return bid - aid;
-          })
-          .map((job) => (
+        {filteredSortedJobs.map((job) => (
             <li
               key={job.id}
               className='p-4 border rounded shadow bg-light-background dark:bg-dark-card dark:border-dark-accent text-left'
@@ -574,10 +595,7 @@ const JobList = ({
                         >
                           <input
                             type='checkbox'
-                            checked={editFormData.tags
-                              ?.split(',')
-                              .map((t) => t.trim())
-                              .includes(tag)}
+                            checked={editTags.includes(tag)}
                             onChange={() => handleTagToggle(tag)}
                             className='dark:bg-gray-700'
                           />
@@ -596,9 +614,10 @@ const JobList = ({
                         onClick={() => {
                           setEditJobId(null);
                           setRoundDelta(0);
-                          setRoundAddDate(localTodayYMD());
-                          setOfferDate(localTodayYMD());
-                          setRejectDate(localTodayYMD());
+                          const todayReset = todayYMDLocal();
+                          setRoundAddDate(todayReset);
+                          setOfferDate(todayReset);
+                          setRejectDate(todayReset);
                         }}
                         className='bg-gray-400 text-white px-2 py-1 rounded dark:bg-cyan-800 dark:hover:bg-cyan-900'
                       >
