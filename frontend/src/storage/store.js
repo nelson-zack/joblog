@@ -35,7 +35,21 @@ export const exportBundleSchema = z.object({
   jobs: z.array(jobSchema)
 });
 
-const deepClone = (value) => JSON.parse(JSON.stringify(value));
+const cloneStatusHistory = (history) =>
+  Array.isArray(history)
+    ? history.map((entry) => (entry ? { ...entry } : entry))
+    : history;
+
+const cloneJob = (job) =>
+  job == null
+    ? job
+    : {
+        ...job,
+        status_history: cloneStatusHistory(job.status_history)
+      };
+
+const cloneJobs = (items) =>
+  Array.isArray(items) ? items.map((job) => cloneJob(job)) : [];
 
 export const createStore = (driver) => {
   let jobs = [];
@@ -43,13 +57,13 @@ export const createStore = (driver) => {
   const subscribers = new Set();
 
   const notify = () => {
-    const snapshot = deepClone(jobs);
+    const snapshot = cloneJobs(jobs);
     subscribers.forEach((listener) => listener(snapshot));
   };
 
   const ensureInitialized = async () => {
     if (!initialized) {
-      jobs = deepClone(await driver.loadJobs());
+      jobs = cloneJobs(await driver.loadJobs());
       initialized = true;
       notify();
     }
@@ -58,36 +72,36 @@ export const createStore = (driver) => {
   return {
     async load() {
       await ensureInitialized();
-      return deepClone(jobs);
+      return cloneJobs(jobs);
     },
     getSnapshot() {
-      return deepClone(jobs);
+      return cloneJobs(jobs);
     },
     subscribe(listener) {
       subscribers.add(listener);
       return () => subscribers.delete(listener);
     },
     async reload() {
-      jobs = deepClone(await driver.loadJobs());
+      jobs = cloneJobs(await driver.loadJobs());
       initialized = true;
       notify();
-      return deepClone(jobs);
+      return cloneJobs(jobs);
     },
     async createJob(draft) {
       await ensureInitialized();
-      const created = await driver.createJob(deepClone(draft));
-      jobs = [...jobs, deepClone(created)];
+      const created = await driver.createJob(cloneJob(draft));
+      jobs = [...jobs, cloneJob(created)];
       notify();
-      return deepClone(created);
+      return cloneJob(created);
     },
     async updateJob(id, updates) {
       await ensureInitialized();
-      const updated = await driver.updateJob(id, deepClone(updates));
+      const updated = await driver.updateJob(id, cloneJob(updates));
       jobs = jobs.map((job) =>
-        String(job.id) === String(updated.id) ? deepClone(updated) : job
+        String(job.id) === String(updated.id) ? cloneJob(updated) : job
       );
       notify();
-      return deepClone(updated);
+      return cloneJob(updated);
     },
     async deleteJob(id) {
       await ensureInitialized();
@@ -117,9 +131,9 @@ export const createStore = (driver) => {
       }
       const parsed = exportBundleSchema.parse(bundle);
       await driver.importData(parsed);
-      jobs = deepClone(parsed.jobs);
+      jobs = cloneJobs(parsed.jobs);
       notify();
-      return deepClone(parsed.jobs);
+      return cloneJobs(parsed.jobs);
     },
     async getMeta(key) {
       if (!driver.getMeta) return null;
