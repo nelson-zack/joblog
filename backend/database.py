@@ -14,3 +14,14 @@ else:
 
 SessionLocal = sessionmaker(bind=engine, autoflush=False, autocommit=False)
 Base = declarative_base()
+
+
+def ensure_indexes():
+    statements = [
+        "CREATE INDEX IF NOT EXISTS ix_analytics_installs_last_seen ON analytics_installs (last_seen)",
+        "CREATE INDEX IF NOT EXISTS ix_analytics_events_install_id ON analytics_events (install_id)",
+        "CREATE INDEX IF NOT EXISTS ix_analytics_events_event ON analytics_events (event)",
+    ]
+    with engine.begin() as connection:
+        for stmt in statements:
+            connection.exec_driver_sql(stmt)
