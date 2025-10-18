@@ -15,32 +15,8 @@
  */
 import React, { useState } from 'react';
 import { MODES } from '../storage/selectStore';
-
-/**
- * Normalize a date string into strict YYYY-MM-DD.
- * Accepts "YYYY-M-D" and pads month/day. Returns "" for invalid input.
- */
-const normalizeYMD = (s) => {
-  if (!s || typeof s !== 'string') return '';
-  // Accept "YYYY-MM-DD" and also pad variants like "YYYY-M-D"
-  const m = s.match(/^(\d{4})-(\d{1,2})-(\d{1,2})$/);
-  if (!m) return '';
-  const [_, y, mo, d] = m.map(Number);
-  if (!y || !mo || !d) return '';
-  return `${y}-${String(mo).padStart(2, '0')}-${String(d).padStart(2, '0')}`;
-};
-
-/**
- * Local (non-UTC) today in YYYY-MM-DD.
- * Avoids evening rollover issues that occur with toISOString().
- */
-const todayYMD = () => {
-  const d = new Date();
-  const y = d.getFullYear();
-  const m = String(d.getMonth() + 1).padStart(2, '0');
-  const day = String(d.getDate()).padStart(2, '0');
-  return `${y}-${m}-${day}`;
-};
+import { normalizeYMD, todayYMDLocal } from '../utils/date';
+import { joinTags } from '../utils/tags';
 
 const JobForm = ({ onCreateJob, mode }) => {
   const [formData, setFormData] = useState({
@@ -64,6 +40,7 @@ const JobForm = ({ onCreateJob, mode }) => {
     'Startup'
   ];
   const [selectedTags, setSelectedTags] = useState([]);
+  const [formError, setFormError] = useState(null);
 
   // Shared input styles (dark/light + focus accents)
   const inputBase =
@@ -72,16 +49,22 @@ const JobForm = ({ onCreateJob, mode }) => {
   const textAreaBase = inputBase;
 
   const handleChange = (e) => {
+    if (e.target.name === 'date_applied') {
+      setFormError(null);
+    }
     setFormData({ ...formData, [e.target.name]: e.target.value });
   };
 
   const handleSubmit = async (e) => {
     e.preventDefault();
-    const resolvedDate = normalizeYMD(formData.date_applied || todayYMD());
-    const tagsNorm = selectedTags
-      .map((t) => t.trim())
-      .filter(Boolean)
-      .join(',');
+    const normalizedDate =
+      normalizeYMD(formData.date_applied || todayYMDLocal()) || '';
+    if (!normalizedDate && mode !== MODES.ADMIN) {
+      setFormError('Please enter a valid date (YYYY-MM-DD).');
+      return;
+    }
+    const resolvedDate = normalizedDate || todayYMDLocal();
+    const tagsNorm = joinTags(selectedTags);
 
     const payload = {
       ...formData,
@@ -97,6 +80,7 @@ const JobForm = ({ onCreateJob, mode }) => {
 
     try {
       await onCreateJob?.(payload);
+      setFormError(null);
       setFormData({
         title: '',
         company: '',
@@ -122,6 +106,11 @@ const JobForm = ({ onCreateJob, mode }) => {
       onSubmit={handleSubmit}
       className='mb-8 p-4 bg-light-background text-light-text dark:bg-dark-background dark:text-dark-text rounded shadow'
     >
+      {formError ? (
+        <div className='mb-2 text-sm text-red-500 dark:text-red-400'>
+          {formError}
+        </div>
+      ) : null}
       <h2 className='text-lg font-bold mb-2'>Add New Job</h2>
       <div className='grid grid-cols-1 gap-2'>
         <input

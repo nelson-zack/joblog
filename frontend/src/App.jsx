@@ -12,6 +12,7 @@ import { MODES, createStoreForMode } from "./storage/selectStore";
 import SettingsDrawer from "./components/SettingsDrawer";
 import { DATA_EXPORT_VERSION, exportBundleSchema } from "./storage/store";
 import mockJobs from "./mock/jobs.sample.json";
+import { exportJobsToCsv } from "./utils/csv";
 
 const MS_PER_DAY = 24 * 60 * 60 * 1000;
 const INSTALL_ID_KEY = "joblog_install_id_v1";
@@ -387,33 +388,7 @@ function App() {
   }, [mode, store, sendAnalyticsEvent]);
 
   const handleExportCsv = () => {
-    const headers = [
-      "Title",
-      "Company",
-      "Status",
-      "Date Applied",
-      "Tags",
-      "Notes",
-      "Link",
-    ];
-    const rows = jobs.map((job) => [
-      job.title,
-      job.company,
-      job.status,
-      job.date_applied,
-      job.tags,
-      job.notes?.replace(/\n/g, " "),
-      job.link,
-    ]);
-    const csvContent = [headers, ...rows]
-      .map((row) => row.map((cell) => `"${cell || ""}"`).join(","))
-      .join("\n");
-
-    downloadFile(
-      `joblog-export-${new Date().toISOString().slice(0, 10)}.csv`,
-      csvContent,
-      "text/csv;charset=utf-8;"
-    );
+    exportJobsToCsv(jobs);
   };
 
   const handleImportJson = async (text) => {

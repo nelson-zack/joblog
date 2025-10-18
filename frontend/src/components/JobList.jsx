@@ -16,43 +16,13 @@
  */
 import React, { useState } from 'react';
 import { MODES } from '../storage/selectStore';
-
-/**
- * Parse a strict YYYY-MM-DD into a UTC timestamp (ms).
- * Returns 0 for missing/invalid input so items sort last.
- */
-function parseYMDToUTC(ymd) {
-  if (!ymd || typeof ymd !== 'string') return 0; // push missing dates to bottom
-  const m = ymd.match(/^(\d{4})-(\d{2})-(\d{2})$/);
-  if (!m) return 0;
-  const y = Number(m[1]);
-  const mo = Number(m[2]); // 1-12
-  const d = Number(m[3]);
-  // Date.UTC expects monthIndex 0-11
-  return Date.UTC(y, mo - 1, d);
-}
-
-/**
- * Normalize to strict YYYY-MM-DD (pads month/day). Returns "" on invalid input.
- */
-const normalizeYMD = (s) => {
-  if (!s || typeof s !== 'string') return '';
-  const m = s.match(/^(\d{4})-(\d{1,2})-(\d{1,2})$/);
-  if (!m) return '';
-  const [_, y, mo, d] = m.map(Number);
-  if (!y || !mo || !d) return '';
-  return `${y}-${String(mo).padStart(2, '0')}-${String(d).padStart(2, '0')}`;
-};
-/**
- * Local-tz today in YYYY-MM-DD. Avoids UTC rollover from toISOString().
- */
-const localTodayYMD = () => {
-  const d = new Date();
-  const y = d.getFullYear();
-  const m = String(d.getMonth() + 1).padStart(2, '0');
-  const day = String(d.getDate()).padStart(2, '0');
-  return `${y}-${m}-${day}`;
-};
+import {
+  parseYMDToUTC,
+  normalizeYMD,
+  todayYMDLocal
+} from '../utils/date';
+import { parseTags, joinTags } from '../utils/tags';
+import { exportJobsToCsv } from '../utils/csv';
 
 const JobList = ({
   jobs,
@@ -86,10 +56,10 @@ const JobList = ({
   // Planned round delta (applied on Save)
   const [roundDelta, setRoundDelta] = useState(0);
   // Date for the round to add
-  const [roundAddDate, setRoundAddDate] = useState(localTodayYMD());
+  const [roundAddDate, setRoundAddDate] = useState(todayYMDLocal());
   // Optional dates for Offer/Rejected
-  const [offerDate, setOfferDate] = useState(localTodayYMD());
-  const [rejectDate, setRejectDate] = useState(localTodayYMD());
+  const [offerDate, setOfferDate] = useState(todayYMDLocal());
+  const [rejectDate, setRejectDate] = useState(todayYMDLocal());
 
   const handleDelete = async (id) => {
     try {
@@ -106,9 +76,9 @@ const JobList = ({
     setEditJobId(job.id);
     setEditFormData({ ...job });
     setRoundDelta(0);
-    setRoundAddDate(localTodayYMD());
-    setOfferDate(localTodayYMD());
-    setRejectDate(localTodayYMD());
+    setRoundAddDate(todayYMDLocal());
+    setOfferDate(todayYMDLocal());
+    setRejectDate(todayYMDLocal());
   };
 
   const handleEditChange = (e) => {
@@ -116,13 +86,11 @@ const JobList = ({
   };
 
   const handleTagToggle = (tag) => {
-    const tags = editFormData.tags
-      ? editFormData.tags.split(',').map((t) => t.trim())
-      : [];
+    const tags = parseTags(editFormData.tags);
     const updated = tags.includes(tag)
       ? tags.filter((t) => t !== tag)
       : [...tags, tag];
-    setEditFormData({ ...editFormData, tags: updated.join(',') });
+    setEditFormData({ ...editFormData, tags: joinTags(updated) });
   };
 
   const handleSave = async () => {
@@ -137,18 +105,37 @@ const JobList = ({
       if (
         !['Interviewing', 'Offer', 'Rejected'].includes(editFormData.status)
       ) {
+        const entryDate = normalizeYMD(todayYMDLocal());
         updatedHistory.push({
           status: editFormData.status,
-          date: localTodayYMD()
+          date: entryDate || todayYMDLocal()
         });
       }
+    }
+
+    const ensureDate = (value, label) => {
+      const normalized = normalizeYMD(value);
+      if (normalized) return normalized;
+      if (isAdmin) return value || '';
+      alert(`${label} must be a valid date (YYYY-MM-DD).`);
+      return null;
+    };
+
+    const dateAppliedNormalized = ensureDate(
+      editFormData.date_applied || todayYMDLocal(),
+      'Date applied'
+    );
+    if (!dateAppliedNormalized && !isAdmin) {
+      return;
     }
 
     // Apply planned interview round changes
     if (roundDelta > 0) {
       const toAdd = Math.min(1, roundDelta); // at most one per save
       for (let i = 0; i < toAdd; i++) {
-        const d = normalizeYMD(roundAddDate) || localTodayYMD();
+        const roundDate = ensureDate(roundAddDate, 'Interview round date');
+        if (!roundDate && !isAdmin) return;
+        const d = roundDate || todayYMDLocal();
         updatedHistory.push({ status: 'Interviewing', date: d });
       }
     } else if (roundDelta < 0) {
@@ -175,7 +162,9 @@ const JobList = ({
         Array.isArray(updatedHistory) &&
         updatedHistory.some((s) => s.status === 'Offer');
       if (!hadOfferBefore && !hasOfferNow) {
-        const d = normalizeYMD(offerDate) || localTodayYMD();
+        const normalizedOfferDate = ensureDate(offerDate, 'Offer date');
+        if (!normalizedOfferDate && !isAdmin) return;
+        const d = normalizedOfferDate || todayYMDLocal();
         updatedHistory.push({ status: 'Offer', date: d });
       }
     } else if (editFormData.status === 'Rejected') {
@@ -186,7 +175,9 @@ const JobList = ({
         Array.isArray(updatedHistory) &&
         updatedHistory.some((s) => s.status === 'Rejected');
       if (!hadRejectBefore && !hasRejectNow) {
-        const d = normalizeYMD(rejectDate) || localTodayYMD();
+        const normalizedRejectDate = ensureDate(rejectDate, 'Rejection date');
+        if (!normalizedRejectDate && !isAdmin) return;
+        const d = normalizedRejectDate || todayYMDLocal();
         updatedHistory.push({ status: 'Rejected', date: d });
       }
     }
@@ -197,7 +188,9 @@ const JobList = ({
         Array.isArray(updatedHistory) &&
         updatedHistory.some((s) => s.status === 'Offer');
       if (!hasOfferFinal) {
-        const d = normalizeYMD(offerDate) || localTodayYMD();
+        const normalizedOfferDate = ensureDate(offerDate, 'Offer date');
+        if (!normalizedOfferDate && !isAdmin) return;
+        const d = normalizedOfferDate || todayYMDLocal();
         updatedHistory.push({ status: 'Offer', date: d });
       }
     } else if (editFormData.status === 'Rejected') {
@@ -205,70 +198,44 @@ const JobList = ({
         Array.isArray(updatedHistory) &&
         updatedHistory.some((s) => s.status === 'Rejected');
       if (!hasRejectFinal) {
-        const d = normalizeYMD(rejectDate) || localTodayYMD();
+        const normalizedRejectDate = ensureDate(rejectDate, 'Rejection date');
+        if (!normalizedRejectDate && !isAdmin) return;
+        const d = normalizedRejectDate || todayYMDLocal();
         updatedHistory.push({ status: 'Rejected', date: d });
       }
     }
 
-    // Build normalized payload: strict date + trimmed tag list
     const payload = {
       ...editFormData,
-      date_applied: normalizeYMD(editFormData.date_applied || localTodayYMD()),
+      date_applied: dateAppliedNormalized || todayYMDLocal(),
       status_history: updatedHistory,
-      tags: (editFormData.tags || '')
-        .split(',')
-      .map((t) => t.trim())
-      .filter(Boolean)
-      .join(',')
+      tags: joinTags(parseTags(editFormData.tags))
     };
+
+    const offerDateForPayload =
+      ensureDate(offerDate, 'Offer date') || todayYMDLocal();
+    const rejectDateForPayload =
+      ensureDate(rejectDate, 'Rejection date') || todayYMDLocal();
+    if (!isAdmin && (!offerDateForPayload || !rejectDateForPayload)) {
+      return;
+    }
 
     try {
       await onUpdateJob?.(editJobId, payload, {
-        offerDate: normalizeYMD(offerDate) || localTodayYMD(),
-        rejectDate: normalizeYMD(rejectDate) || localTodayYMD()
+        offerDate: offerDateForPayload,
+        rejectDate: rejectDateForPayload
       });
       setEditJobId(null);
       setRoundDelta(0);
-      setRoundAddDate(localTodayYMD());
-      setOfferDate(localTodayYMD());
-      setRejectDate(localTodayYMD());
+      setRoundAddDate(todayYMDLocal());
+      setOfferDate(todayYMDLocal());
+      setRejectDate(todayYMDLocal());
     } catch (error) {
       console.error('Error updating job:', error);
       if (isAdmin) {
         alert('Failed to update job on the server. Please try again.');
       }
     }
-  };
-
-  const downloadCSV = (data) => {
-    const headers = [
-      'Title',
-      'Company',
-      'Status',
-      'Date Applied',
-      'Tags',
-      'Notes',
-      'Link'
-    ];
-    const rows = data.map((job) => [
-      job.title,
-      job.company,
-      job.status,
-      job.date_applied,
-      job.tags,
-      job.notes?.replace(/\n/g, ' '),
-      job.link
-    ]);
-    const csvContent = [headers, ...rows]
-      .map((row) => row.map((cell) => `"${cell || ''}"`).join(','))
-      .join('\n');
-    const blob = new Blob([csvContent], { type: 'text/csv;charset=utf-8;' });
-    const link = document.createElement('a');
-    link.href = URL.createObjectURL(blob);
-    link.setAttribute('download', 'job_applications.csv');
-    document.body.appendChild(link);
-    link.click();
-    document.body.removeChild(link);
   };
 
   // ---- ANALYTICS (renamed + refined) ----
@@ -430,7 +397,7 @@ const JobList = ({
       {/* CSV Export */}
       <div className='mb-4'>
         <button
-          onClick={() => downloadCSV(jobs)}
+          onClick={() => exportJobsToCsv(jobs, 'job_applications.csv')}
           className='bg-light-accent text-white px-4 py-2 rounded hover:bg-light-accentHover transition dark:bg-cyan-500 dark:hover:bg-cyan-400 dark:hover:shadow-[0_0_10px_#22d3ee]'
         >
           Export to CSV
@@ -450,11 +417,7 @@ const JobList = ({
                 : job.status === statusFilter;
             const matchesTag =
               tagFilter === 'All' ||
-              (job.tags &&
-                job.tags
-                  .split(',')
-                  .map((t) => t.trim())
-                  .includes(tagFilter));
+              (job.tags && parseTags(job.tags).includes(tagFilter));
             return matchesStatus && matchesTag;
           })
           .sort((a, b) => {
