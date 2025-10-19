@@ -159,6 +159,10 @@ npm run lint     # eslint validation
 - **Frontend:** `cd frontend && npm run test` — Vitest runs in jsdom with `fetch`/`sendBeacon` mocked to avoid real network traffic.
 - Coverage summaries land in `coverage/`. Add new backend fixtures under `backend/tests/` and frontend specs under `frontend/src/__tests__/`.
 
+### Performance
+
+- Job rows are rendered through a memoized `JobRow` component and analytics are derived from memoized selectors, reducing re-renders ahead of upcoming list virtualization work.
+
 
 ---
 
