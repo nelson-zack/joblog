@@ -80,6 +80,16 @@ Job Log is a privacy-first job application tracker with built-in analytics and t
 
 ---
 
+## Performance
+
+- Single-page scroll: insights, analytics, and job cards all live in the document flow so the browser’s main scrollbar is the only scroll surface.
+- Sticky controls: the search and filter bar stays pinned to the top of the viewport (with the `/` keyboard shortcut) while the rest of the page scrolls away.
+- Window-scrolled virtualization: long lists stream through `react-virtuoso` with `useWindowScroll`, keeping dozens of cards visible without extra containers.
+- `<30` fallback: when a filter returns fewer than 30 jobs we render the simple static list to keep the DOM lightweight for small result sets.
+- CSV export still serialises the full filtered array so downloads match what’s visible, regardless of virtualization.
+
+---
+
 ## Anonymous Analytics
 
 Job Log records only install-level metrics so you can benchmark engagement without exposing PII.
