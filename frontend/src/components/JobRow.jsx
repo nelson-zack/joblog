@@ -1,4 +1,20 @@
-import React, { memo, useRef } from 'react';
+import React, { memo, useCallback, useMemo, useRef } from 'react';
+
+const sanitizeUrl = (value) => {
+  if (typeof value !== 'string' || value.trim().length < 1) return null;
+  const base =
+    (typeof window !== 'undefined' && window.location?.origin) || 'https://localhost';
+  try {
+    const url = new URL(value, base);
+    const protocol = url.protocol?.toLowerCase();
+    if (protocol === 'http:' || protocol === 'https:') {
+      return url.toString();
+    }
+  } catch {
+    // Ignore invalid URLs; fall through to returning null below.
+  }
+  return null;
+};
 
 const JobRow = memo(({
   job,
@@ -25,8 +41,21 @@ const JobRow = memo(({
 }) => {
   const containerRef = useRef(null);
   const safeTags = Array.isArray(editTags) ? editTags : [];
+  const safeTagOptions = Array.isArray(tagOptions) ? tagOptions : [];
   const showOfferDate = editFormData?.status === 'Offer';
   const showRejectDate = editFormData?.status === 'Rejected';
+  const safeLink = useMemo(() => sanitizeUrl(job?.link), [job?.link]);
+  const clampRoundDelta = useCallback((value) => {
+    const normalized = typeof value === 'number' && Number.isFinite(value) ? value : 0;
+    return Math.max(-99, Math.min(1, normalized));
+  }, []);
+  const adjustRoundDelta = useCallback((delta) => {
+    if (!setRoundDelta) return;
+    setRoundDelta((current) => {
+      const base = typeof current === 'number' && Number.isFinite(current) ? current : 0;
+      return clampRoundDelta(base + delta);
+    });
+  }, [clampRoundDelta, setRoundDelta]);
 
   const OuterTag = isVirtualized ? 'div' : 'li';
   const outerProps = isVirtualized
@@ -90,7 +119,7 @@ const JobRow = memo(({
                 </span>
                 <button
                   type='button'
-                  onClick={() => setRoundDelta?.((roundDelta ?? 0) - 1)}
+                  onClick={() => adjustRoundDelta(-1)}
                   className='text-xs px-2 py-1 rounded border dark:border-gray-600 dark:text-dark-text hover:bg-gray-100 dark:hover:bg-gray-700'
                   title='Remove last interview entry'
                   aria-label='Remove last interview entry'
@@ -99,7 +128,7 @@ const JobRow = memo(({
                 </button>
                 <button
                   type='button'
-                  onClick={() => setRoundDelta?.(Math.min(1, (roundDelta ?? 0) + 1))}
+                  onClick={() => adjustRoundDelta(1)}
                   className='text-xs px-2 py-1 rounded border dark:border-gray-600 dark:text-dark-text hover:bg-gray-100 dark:hover:bg-gray-700'
                   title='Plan to add one interview entry'
                   aria-label='Plan to add one interview entry'
@@ -161,7 +190,7 @@ const JobRow = memo(({
                 rows={3}
               />
               <div className='flex flex-wrap gap-4'>
-                {tagOptions.map((tag) => (
+                {safeTagOptions.map((tag) => (
                   <label
                     key={tag}
                     className='flex items-center space-x-2 dark:text-dark-text'
@@ -178,12 +207,14 @@ const JobRow = memo(({
               </div>
               <div className='space-x-2'>
                 <button
+                  type='button'
                   onClick={onSave}
                   className='bg-green-500 text-white px-2 py-1 rounded dark:bg-cyan-500 dark:hover:bg-cyan-400'
                 >
                   Save
                 </button>
                 <button
+                  type='button'
                   onClick={onCancel}
                   className='bg-gray-400 text-white px-2 py-1 rounded dark:bg-cyan-800 dark:hover:bg-cyan-900'
                 >
@@ -197,10 +228,10 @@ const JobRow = memo(({
                 <div className='font-semibold dark:text-dark-text'>
                   {job.title} @ {job.company}
                 </div>
-                {job.link && (
+                {safeLink && (
                   <div className='mt-1'>
                     <a
-                      href={job.link}
+                      href={safeLink}
                       target='_blank'
                       rel='noopener noreferrer'
                       title={job.link}

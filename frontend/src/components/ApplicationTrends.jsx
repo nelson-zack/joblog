@@ -29,7 +29,8 @@ function ymdLocal(date) {
 
 // Helper to get current date, optionally overridden by debugNow URL param
 function getNow() {
-  const params = new URLSearchParams(window.location.search);
+  if (typeof window === 'undefined') return new Date();
+  const params = new URLSearchParams(window.location.search || '');
   const debugNow = params.get('debugNow');
   if (debugNow) {
     const parsed = new Date(debugNow);
@@ -68,11 +69,12 @@ const ApplicationTrends = ({ jobs }) => {
     return ymdLocal(date);
   });
 
-  const countsByDate = last7Days.map(
-    (day) => jobs.filter((job) => String(job.date_applied) === day).length
-  );
+  const safeJobs = Array.isArray(jobs) ? jobs : [];
+  if (safeJobs.length === 0) return null;
 
-  if (!jobs.length) return null;
+  const countsByDate = last7Days.map((day) =>
+    safeJobs.filter((job) => String(job?.date_applied) === day).length
+  );
 
   const isMobile = typeof window !== 'undefined' ? window.innerWidth < 640 : false;
   const aspectRatio = isMobile ? 1.1 : 2.1;
