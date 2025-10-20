@@ -41,35 +41,11 @@ function getNow() {
 }
 
 const ApplicationTrends = ({ jobs }) => {
-  if (!jobs.length) return null;
-
-  // Generate last 7 days in local timezone (midnight)
-  const last7Days = [...Array(7)].map((_, i) => {
-    const date = getNow();
-    date.setHours(0, 0, 0, 0); // Set to local midnight
-    date.setDate(date.getDate() - (6 - i));
-    return ymdLocal(date);
-  });
-
-  const countsByDate = last7Days.map(
-    (day) => jobs.filter((job) => String(job.date_applied) === day).length
+  const [isDarkMode, setIsDarkMode] = useState(() =>
+    typeof document !== 'undefined'
+      ? document.documentElement.classList.contains('dark')
+      : false
   );
-
-  const [isDarkMode, setIsDarkMode] = useState(
-    document.documentElement.classList.contains('dark')
-  );
-
-  const data = {
-    labels: last7Days,
-    datasets: [
-      {
-        label: 'Applications',
-        data: countsByDate,
-        backgroundColor: isDarkMode ? '#06b6d4' : '#8E9775',
-        hoverBackgroundColor: isDarkMode ? '#22d3ee' : '#7c8667'
-      }
-    ]
-  };
 
   useEffect(() => {
     const observer = new MutationObserver(() => {
@@ -84,15 +60,46 @@ const ApplicationTrends = ({ jobs }) => {
     return () => observer.disconnect();
   }, []);
 
+  // Generate last 7 days in local timezone (midnight)
+  const last7Days = [...Array(7)].map((_, i) => {
+    const date = getNow();
+    date.setHours(0, 0, 0, 0); // Set to local midnight
+    date.setDate(date.getDate() - (6 - i));
+    return ymdLocal(date);
+  });
+
+  const countsByDate = last7Days.map(
+    (day) => jobs.filter((job) => String(job.date_applied) === day).length
+  );
+
+  if (!jobs.length) return null;
+
+  const isMobile = typeof window !== 'undefined' ? window.innerWidth < 640 : false;
+  const aspectRatio = isMobile ? 1.1 : 2.1;
+
+  const data = {
+    labels: last7Days,
+    datasets: [
+      {
+        label: 'Applications',
+        data: countsByDate,
+        backgroundColor: isDarkMode ? '#06b6d4' : '#8E9775',
+        hoverBackgroundColor: isDarkMode ? '#22d3ee' : '#7c8667'
+      }
+    ]
+  };
+
   const options = {
     responsive: true,
+    maintainAspectRatio: true,
+    aspectRatio,
     plugins: {
       legend: { display: false },
       title: {
         display: true,
         text: 'Job Applications - Last 7 Days',
         font: {
-          size: 16,
+          size: isMobile ? 14 : 16,
           weight: 'bold',
           family: isDarkMode ? 'monospace' : undefined
         },
@@ -103,7 +110,7 @@ const ApplicationTrends = ({ jobs }) => {
       x: {
         ticks: {
           color: isDarkMode ? '#e5e7eb' : '#3b3b3b',
-          font: { size: 10, family: isDarkMode ? 'monospace' : undefined }
+          font: { size: isMobile ? 9 : 10, family: isDarkMode ? 'monospace' : undefined }
         },
         grid: {
           color: isDarkMode ? '#e5e7eb' : '#E5E5E0'
@@ -114,7 +121,7 @@ const ApplicationTrends = ({ jobs }) => {
         ticks: {
           stepSize: 1,
           color: isDarkMode ? '#e5e7eb' : '#3b3b3b',
-          font: { size: 10, family: isDarkMode ? 'monospace' : undefined }
+          font: { size: isMobile ? 9 : 10, family: isDarkMode ? 'monospace' : undefined }
         },
         grid: {
           color: isDarkMode ? '#e5e7eb' : '#E5E5E0'
@@ -129,9 +136,21 @@ const ApplicationTrends = ({ jobs }) => {
         'mb-8 bg-[#F9F9F6] dark:bg-[#101010] p-4 rounded shadow' +
         (isDarkMode ? ' font-mono' : '')
       }
-      style={{ height: '300px' }}
+      style={{
+        maxWidth: '48rem',
+        marginLeft: 'auto',
+        marginRight: 'auto'
+      }}
     >
-      <Bar data={data} options={options} />
+      <Bar
+        data={data}
+        options={options}
+        style={{
+          margin: '0 auto',
+          maxWidth: '100%',
+          width: '100%'
+        }}
+      />
     </div>
   );
 };

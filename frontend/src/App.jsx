@@ -1,7 +1,6 @@
 import React, { useState, useEffect, useMemo, useCallback, useRef } from "react";
 import JobForm from "./components/JobForm";
 import JobList from "./components/JobList";
-import ApplicationTrends from "./components/ApplicationTrends";
 import DemoBanner from "./components/DemoBanner";
 import PersonalBanner from "./components/PersonalBanner";
 import OnboardingModal from "./components/OnboardingModal";
@@ -252,7 +251,7 @@ function App() {
     } catch (error) {
       console.debug("Unable to send analytics heartbeat", error);
     }
-  }, [installId, API_BASE_URL, effectiveAnalyticsOptOut, mode]);
+  }, [installId, effectiveAnalyticsOptOut, mode]);
 
   const sendAnalyticsEvent = useCallback(
     (eventName) => {
@@ -283,7 +282,7 @@ function App() {
       console.debug("Unable to record analytics event", error);
     }
   },
-    [installId, API_BASE_URL, effectiveAnalyticsOptOut, mode]
+    [installId, effectiveAnalyticsOptOut, mode]
   );
 
   const handleAnalyticsToggle = useCallback((disabled) => {
@@ -402,6 +401,7 @@ function App() {
     try {
       parsed = JSON.parse(text);
     } catch (error) {
+      console.error("Failed to parse imported JSON:", error);
       throw new Error("Invalid JSON: unable to parse file.");
     }
     const bundle = exportBundleSchema.parse(parsed);
@@ -629,7 +629,6 @@ function App() {
       />
 
       <JobForm onCreateJob={handleCreateJob} mode={mode} />
-      <ApplicationTrends jobs={jobs} />
       <JobList
         jobs={jobs}
         mode={mode}
